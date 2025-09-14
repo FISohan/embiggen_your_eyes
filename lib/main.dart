@@ -27,7 +27,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
     super.didChangeDependencies();
     widget.screenSize = MediaQuery.of(context).size;
     widget.initialPos = Offset(
@@ -77,7 +76,7 @@ class Painter extends CustomPainter {
     required this.viewPortSize,
   }) {
     imgResolution = Size(
-      resolutionTable[1]!.aspectRatio.toDouble() *
+      resolutionTable[2]!.aspectRatio.toDouble() *
           (viewPortSize.height.toDouble() - 100),
       viewPortSize.height.toDouble() - 100,
     );
@@ -85,7 +84,7 @@ class Painter extends CustomPainter {
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
-    _drawTiles(canvas, 1);
+    _drawTiles(canvas, 2);
     _drawViewPort(canvas);
   }
 
@@ -138,23 +137,18 @@ class Painter extends CustomPainter {
     for (int i = 0; i < rows; i += 1) {
       for (int j = 0; j < cols; j += 1) {
         double tileWidth = min(
-          tileSize.toDouble(),
+          tileSize,
           originalImgRes.width - (i * tileSize),
-        );
+        ).ceilToDouble();
         double tileHeight = min(
-          tileSize.toDouble(),
+          tileSize,
           originalImgRes.height - (j * tileSize),
-        );
+        ).ceilToDouble();
         Offset pos = Offset(
           (i * tileSize) + initialPos.dx,
           (j * tileSize) + initialPos.dy,
         );
-        Rect rect = Rect.fromLTWH(
-          pos.dx.floorToDouble(),
-          pos.dy.floorToDouble(),
-          tileWidth,
-          tileHeight,
-        );
+        Rect rect = Rect.fromLTWH(pos.dx, pos.dy, tileWidth, tileHeight);
         List<Offset> corners = _getRectangleCorners(
           pos.dx,
           pos.dy,
@@ -171,18 +165,15 @@ class Painter extends CustomPainter {
             corner.dx,
             corner.dy,
           )) {
-            _debugPoint(canvas, corner, Colors.amberAccent);
             countCornerInsideViewPort = 1;
             break;
           } else {
-            _debugPoint(canvas, corner, Colors.lightGreen);
             countCornerInsideViewPort *= 0;
           }
         }
-        canvas.drawRect(
-          rect,
-          countCornerInsideViewPort == 1 ? paint : strokePaint,
-        );
+        if (countCornerInsideViewPort == 1) {
+          canvas.drawRect(rect, paint);
+        }
       }
     }
   }
