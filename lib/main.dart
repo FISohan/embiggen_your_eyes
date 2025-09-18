@@ -34,7 +34,7 @@ class MyApp extends StatefulWidget {
   int endX = 0;
   int startY = 0;
   int endY = 0;
-  int currentZoomLevel = 1;
+  int currentZoomLevel = 2;
 
   Map<int, List<List<ui.Image>>>? image = {}; // zoom_level > [img_x][img_y]
 
@@ -125,7 +125,7 @@ class _MyAppState extends State<MyApp> {
             : Stack(
                 children: [
                   Text('''Scale:${widget.scale} \n
-                      pos:${widget.relativePos.dx} ${widget.relativePos.dy}'''),
+                  pos:${widget.relativePos.dx} ${widget.relativePos.dy}'''),
                   CustomPaint(
                     size: Size(
                       widget.screenSize.width,
@@ -139,6 +139,7 @@ class _MyAppState extends State<MyApp> {
                       images: widget.image![widget.currentZoomLevel],
                       relativePos: widget.relativePos,
                       viewportOffset: widget.viewportOffset,
+                      zoomLevel: widget.currentZoomLevel,
                     ),
                   ),
                 ],
@@ -156,6 +157,7 @@ class Painter extends CustomPainter {
   final Offset relativePos;
   final Offset viewportOffset;
   final Offset initialPos;
+  final int zoomLevel;
   final List<List<ui.Image>>? images;
 
   Painter({
@@ -166,6 +168,7 @@ class Painter extends CustomPainter {
     required this.images,
     required this.viewportOffset,
     required this.relativePos,
+    required this.zoomLevel,
   }) {
     imgResolution = Size(
       resolutionTable[2]!.aspectRatio.toDouble() *
@@ -184,31 +187,51 @@ class Painter extends CustomPainter {
     if (images != null && images!.isNotEmpty) {
       double scaledTileSize = tileSize * scale;
 
-      double distantX = ((relativePos.dx - viewportOffset.dx) + scaledTileSize)
-          .abs();
+      double distantX = ((initialPos.dx - viewportOffset.dx)).abs();
       double distantY = ((relativePos.dy - viewportOffset.dy) - scaledTileSize)
           .abs();
 
-      int startX = (distantX / scaledTileSize).floor();
+      int startX = relativePos.dx < 0 ? (distantX / scaledTileSize).floor() : 0;
       int startY = (distantY / scaledTileSize).floor();
 
-      double endDistantX = ((distantX + viewPortSize.width) / scaledTileSize);
-      double endDistantY = ((distantY + viewPortSize.height) / scaledTileSize);
+      Offset imgEndingPoint = Offset(
+        (scaledTileSize * (resolutionTable[zoomLevel]!.width / tileSize)) +
+            relativePos.dx +
+            scaledTileSize,
+        viewportOffset.dy,
+      );
 
-      int endX = (endDistantX / scaledTileSize).ceil();
+      double endDistantX =
+          (viewPortSize.width + viewportOffset.dx) - imgEndingPoint.dx;
+
+      _debugPoint(
+        canvas,
+        Offset(viewPortSize.width + viewportOffset.dx, viewportOffset.dy),
+        Colors.red,
+      );
+      _debugPoint(canvas, initialPos, Colors.greenAccent);
+      _debugPoint(canvas, imgEndingPoint, Colors.orange);
+      double endDistantY =
+          (viewPortSize.height -
+                  (scaledTileSize *
+                      (resolutionTable[zoomLevel]!.height / tileSize)))
+              .abs();
+
+      int endX = imgEndingPoint.dx > viewPortSize.width + viewportOffset.dx
+          ? (endDistantX.abs() / scaledTileSize).ceil()
+          : 0;
       int endY = (endDistantX / scaledTileSize).floor();
       print(endX);
-      print(endDistantX);
 
       for (int y = min(0, startY); y < images!.length; y++) {
-        for (int x = startX; x < images![y].length; x++) {
+        for (int x = startX; x < images![y].length - endX; x++) {
           final tile = images![y][x];
           if (tile != null) {
             _drawImage(
               canvas,
               tile,
               Offset(x * tileSize.toDouble(), y * tileSize.toDouble()),
-              Size(scaledTileSize, scaledTileSize),
+              Size(tile.width * scale, tile.height * scale),
             );
           }
         }
