@@ -36,7 +36,7 @@ class MyApp extends StatefulWidget {
   int endY = 0;
   int currentZoomLevel = 2;
 
-  Map<int, List<List<ui.Image>>>? image = {}; // zoom_level > [img_x][img_y]
+  Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -68,17 +68,22 @@ class _MyAppState extends State<MyApp> {
     int endY, {
     required int zoomLevel,
   }) async {
-    List<List<ui.Image>> tiles = [];
+    int maxX = (resolutionTable[zoomLevel]!.width / tileSize).ceil();
+    int maxY = (resolutionTable[zoomLevel]!.height / tileSize).ceil();
+    widget.image![zoomLevel] ??= List.generate(
+      maxY,
+      (_) => List.generate(maxX, (_) => null),
+    );
 
     for (var y = startY; y < endY; y++) {
-      List<Future<ui.Image>> rowFutures = [];
       for (var x = startX; x < endX; x++) {
-        rowFutures.add(loadNetworkImage(x, y, zoomLevel));
+        loadNetworkImage(x, y, widget.currentZoomLevel).then((value) {
+          setState(() {
+            widget.image![widget.currentZoomLevel]![y][x] = value;
+          });
+        });
       }
-      tiles.add(await Future.wait(rowFutures));
     }
-
-    widget.image![zoomLevel] = tiles;
   }
 
   @override
@@ -158,7 +163,7 @@ class Painter extends CustomPainter {
   final Offset viewportOffset;
   final Offset initialPos;
   final int zoomLevel;
-  final List<List<ui.Image>>? images;
+  final List<List<ui.Image?>>? images;
 
   Painter({
     required this.screenSize,
@@ -232,6 +237,16 @@ class Painter extends CustomPainter {
               tile,
               Offset(x * tileSize.toDouble(), y * tileSize.toDouble()),
               Size(tile.width * scale, tile.height * scale),
+            );
+          } else {
+            canvas.drawRect(
+              Rect.fromLTWH(
+                x * tileSize * scale + initialPos.dx,
+                y * tileSize * scale + initialPos.dy,
+                tileSize * scale,
+                tileSize * scale,
+              ),
+              Paint()..color = Colors.grey.withOpacity(0.2),
             );
           }
         }
