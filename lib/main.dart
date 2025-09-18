@@ -34,7 +34,7 @@ class MyApp extends StatefulWidget {
   int endX = 0;
   int startY = 0;
   int endY = 0;
-  int currentZoomLevel = 2;
+  int currentZoomLevel = 3;
 
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
@@ -90,7 +90,10 @@ class _MyAppState extends State<MyApp> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     widget.screenSize = MediaQuery.of(context).size;
-
+    widget.viewPortSize = Size(
+      widget.screenSize.width - 100,
+      widget.screenSize.height - 100,
+    );
     // Initial scale to fit viewport
     double scaleX =
         widget.viewPortSize.width /
@@ -111,45 +114,45 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onTap: () {
-          setState(() {
-            widget.scale *= widget.scaleFactor;
-          });
-        },
-        onPanUpdate: (DragUpdateDetails drag) {
-          setState(() {
-            widget.initialPos += drag.delta;
-            widget.relativePos = widget.initialPos - widget.viewportOffset;
-          });
-        },
-        child:
-            widget.image == null ||
-                widget.image![widget.currentZoomLevel] == null
-            ? Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  Text('''Scale:${widget.scale} \n
-                  pos:${widget.relativePos.dx} ${widget.relativePos.dy}'''),
-                  CustomPaint(
-                    size: Size(
-                      widget.screenSize.width,
-                      widget.screenSize.height,
-                    ),
-                    painter: Painter(
-                      screenSize: widget.screenSize,
-                      scale: widget.scale,
-                      initialPos: widget.initialPos,
-                      viewPortSize: widget.viewPortSize,
-                      images: widget.image![widget.currentZoomLevel],
-                      relativePos: widget.relativePos,
-                      viewportOffset: widget.viewportOffset,
-                      zoomLevel: widget.currentZoomLevel,
+      body:
+          widget.image == null || widget.image![widget.currentZoomLevel] == null
+          ? Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                Text('''Scale:${widget.scale} \n
+            pos:${widget.relativePos.dx} ${widget.relativePos.dy}'''),
+                SizedBox(
+                  width: widget.viewPortSize.width,
+                  height: widget.viewPortSize.height,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        widget.scale *= widget.scaleFactor;
+                      });
+                    },
+                    onPanUpdate: (DragUpdateDetails drag) {
+                      setState(() {
+                        widget.initialPos += drag.delta;
+                        widget.relativePos =
+                            widget.initialPos - widget.viewportOffset;
+                      });
+                    },
+                    child: CustomPaint(
+                      painter: Painter(
+                        screenSize: widget.screenSize,
+                        scale: widget.scale,
+                        initialPos: widget.initialPos,
+                        viewPortSize: widget.viewPortSize,
+                        images: widget.image![widget.currentZoomLevel],
+                        relativePos: widget.relativePos,
+                        viewportOffset: widget.viewportOffset,
+                        zoomLevel: widget.currentZoomLevel,
+                      ),
                     ),
                   ),
-                ],
-              ),
-      ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -184,8 +187,8 @@ class Painter extends CustomPainter {
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
-    _drawTiles(canvas);
     _drawViewPort(canvas);
+    _drawTiles(canvas);
   }
 
   _drawTiles(Canvas canvas) {
@@ -193,21 +196,22 @@ class Painter extends CustomPainter {
       double scaledTileSize = tileSize * scale;
 
       double distantX = ((initialPos.dx - viewportOffset.dx)).abs();
-      double distantY = ((relativePos.dy - viewportOffset.dy) - scaledTileSize)
-          .abs();
+      double distantY = ((initialPos.dy - viewportOffset.dy)).abs();
 
       int startX = relativePos.dx < 0 ? (distantX / scaledTileSize).floor() : 0;
-      int startY = (distantY / scaledTileSize).floor();
+      int startY = relativePos.dy < 0 ? (distantY / scaledTileSize).floor() : 0;
+      double totalTileY = (resolutionTable[zoomLevel]!.height / tileSize);
+      double totalTileX = (resolutionTable[zoomLevel]!.width / tileSize);
 
       Offset imgEndingPoint = Offset(
-        (scaledTileSize * (resolutionTable[zoomLevel]!.width / tileSize)) +
-            initialPos.dx -
-            scaledTileSize,
-        viewportOffset.dy,
+        (scaledTileSize * totalTileX) + initialPos.dx - scaledTileSize,
+        (scaledTileSize * totalTileY) + initialPos.dy - scaledTileSize,
       );
 
       double endDistantX =
           (viewPortSize.width + viewportOffset.dx) - imgEndingPoint.dx;
+      double endDistantY =
+          imgEndingPoint.dy - (viewPortSize.height + viewportOffset.dy);
 
       _debugPoint(
         canvas,
@@ -215,20 +219,24 @@ class Painter extends CustomPainter {
         Colors.red,
       );
       _debugPoint(canvas, initialPos, Colors.greenAccent);
-      _debugPoint(canvas, imgEndingPoint, Colors.orange);
-      double endDistantY =
-          (viewPortSize.height -
-                  (scaledTileSize *
-                      (resolutionTable[zoomLevel]!.height / tileSize)))
-              .abs();
+      _debugPoint(
+        canvas,
+        initialPos + Offset(0, (scaledTileSize * totalTileY) - scaledTileSize),
+        Colors.indigo,
+      );
 
       int endX = imgEndingPoint.dx > viewPortSize.width + viewportOffset.dx
           ? (endDistantX.abs() / scaledTileSize).ceil()
           : 0;
-      int endY = (endDistantX / scaledTileSize).floor();
-      print(endX);
 
-      for (int y = min(0, startY); y < images!.length; y++) {
+      int endY = imgEndingPoint.dy > viewPortSize.height + viewportOffset.dy
+          ? (endDistantY.abs() / scaledTileSize).ceil()
+          : 0;
+
+      print("sratt $startY");
+      print("end $endY");
+
+      for (int y = startY; y < images!.length - endY; y++) {
         for (int x = startX; x < images![y].length - endX; x++) {
           final tile = images![y][x];
           if (tile != null) {
@@ -251,6 +259,7 @@ class Painter extends CustomPainter {
           }
         }
       }
+      _debugPoint(canvas, imgEndingPoint, Colors.orange);
     } else {
       _debugPoint(canvas, Offset(20, 10), Colors.greenAccent);
     }
