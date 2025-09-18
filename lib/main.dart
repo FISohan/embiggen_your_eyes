@@ -196,7 +196,7 @@ class Painter extends CustomPainter {
 
       Offset imgEndingPoint = Offset(
         (scaledTileSize * (resolutionTable[zoomLevel]!.width / tileSize)) +
-            relativePos.dx +
+            initialPos.dx -
             scaledTileSize,
         viewportOffset.dy,
       );
