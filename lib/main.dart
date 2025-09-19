@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:embiggen_your_eyes/load_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
@@ -216,16 +218,33 @@ class _MyAppState extends State<MyApp> {
                         });
                       }
                     },
-                    child: CustomPaint(
-                      painter: Painter(
-                        screenSize: widget.screenSize,
-                        scale: widget.scale,
-                        initialPos: widget.initialPos,
-                        viewPortSize: widget.viewPortSize,
-                        images: widget.image![widget.currentZoomLevel],
-                        relativePos: widget.relativePos,
-                        viewportOffset: widget.viewportOffset,
-                        zoomLevel: widget.currentZoomLevel,
+                    child: GestureDetector(
+                      onScaleUpdate: (ScaleUpdateDetails event) {
+                        setState(() {
+                          double newScale = widget.scale;
+
+                          widget.scale *= event.scale;
+                          final focal = event.focalPoint;
+                          widget.initialPos =
+                              widget.initialPos -
+                              (focal - widget.initialPos) *
+                                  (newScale / widget.scale - 1);
+
+                          // 3. Apply the new scale
+                          widget.scale = newScale;
+                        });
+                      },
+                      child: CustomPaint(
+                        painter: Painter(
+                          screenSize: widget.screenSize,
+                          scale: widget.scale,
+                          initialPos: widget.initialPos,
+                          viewPortSize: widget.viewPortSize,
+                          images: widget.image![widget.currentZoomLevel],
+                          relativePos: widget.relativePos,
+                          viewportOffset: widget.viewportOffset,
+                          zoomLevel: widget.currentZoomLevel,
+                        ),
                       ),
                     ),
                   ),
