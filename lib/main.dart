@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:embiggen_your_eyes/load_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MaterialApp(home: MyApp()));
@@ -59,7 +60,7 @@ class MyApp extends StatefulWidget {
   MyApp({super.key});
   double scale = 1;
   Offset delta = Offset(0.0, 0.0);
-  double scaleFactor = 1.08;
+  double scaleFactor = 1.03;
 
   Size viewPortSize = Size(600, 400);
   Offset initialPos = Offset(0.0, 0.0);
@@ -186,19 +187,34 @@ class _MyAppState extends State<MyApp> {
                 SizedBox(
                   width: widget.viewPortSize.width,
                   height: widget.viewPortSize.height,
-                  child: GestureDetector(
-                    onTap: () {
+                  child: Listener(
+                    onPointerMove: (event) {
                       setState(() {
-                        widget.scale *= widget.scaleFactor;
-                        widget.currentResolution = _getCurrentResolution();
+                        widget.initialPos += event.delta;
                       });
                     },
-                    onPanUpdate: (DragUpdateDetails drag) {
-                      setState(() {
-                        widget.initialPos += drag.delta;
-                        widget.relativePos =
-                            widget.initialPos - widget.viewportOffset;
-                      });
+                    onPointerSignal: (PointerSignalEvent event) {
+                      if (event is PointerScrollEvent) {
+                        setState(() {
+                          // 1. Determine new scale
+                          double newScale = widget.scale;
+                          if (event.scrollDelta.dy < 0) {
+                            newScale *= widget.scaleFactor; // zoom in
+                          } else if (event.scrollDelta.dy > 0) {
+                            newScale /= widget.scaleFactor; // zoom out
+                          }
+
+                          // 2. Calculate the offset so zoom focuses on pointer
+                          final focal = event.localPosition;
+                          widget.initialPos =
+                              widget.initialPos -
+                              (focal - widget.initialPos) *
+                                  (newScale / widget.scale - 1);
+
+                          // 3. Apply the new scale
+                          widget.scale = newScale;
+                        });
+                      }
                     },
                     child: CustomPaint(
                       painter: Painter(
