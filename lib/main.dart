@@ -221,8 +221,7 @@ class _MyAppState extends State<MyApp> {
                         setState(() {
                           double newScale = widget.scale;
 
-                          widget.scale *= event.scale;
-                          final focal = event.focalPoint;
+                          widget.scale *= event.scale * widget.scaleFactor;
                           widget.initialPos += event.focalPointDelta;
 
                           // 3. Apply the new scale
