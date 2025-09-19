@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
-double tileSize = 256;
+double tileSize = 256.0;
 
 final Map<int, Size> resolutionTable = {
   1: Size(1080, 253),
@@ -16,6 +16,44 @@ final Map<int, Size> resolutionTable = {
   6: Size(34560, 8082),
   7: Size(42208, 9870),
 };
+
+({int startX, int startY, int endX, int endY}) calculateTileBounds({
+  required double scale,
+  required Offset initialPos,
+  required Offset viewportOffset,
+  required int zoomLevel,
+  required Size viewPortSize,
+  required Offset relativePos,
+}) {
+  double scaledTileSize = tileSize * scale;
+
+  double distantX = ((initialPos.dx - viewportOffset.dx)).abs();
+  double distantY = ((initialPos.dy - viewportOffset.dy)).abs();
+
+  int totalTileY = (resolutionTable[zoomLevel]!.height / tileSize).ceil();
+  int totalTileX = (resolutionTable[zoomLevel]!.width / tileSize).ceil();
+
+  Offset imgEndingPoint = Offset(
+    (scaledTileSize * totalTileX) + initialPos.dx - scaledTileSize,
+    (scaledTileSize * totalTileY) + initialPos.dy - scaledTileSize,
+  );
+  double endDistantX =
+      (viewPortSize.width + viewportOffset.dx) - imgEndingPoint.dx;
+  double endDistantY =
+      imgEndingPoint.dy - (viewPortSize.height + viewportOffset.dy);
+
+  int startX = relativePos.dx < 0 ? (distantX / scaledTileSize).floor() : 0;
+  int startY = relativePos.dy < 0 ? (distantY / scaledTileSize).floor() : 0;
+
+  int endX = imgEndingPoint.dx > viewPortSize.width + viewportOffset.dx
+      ? (endDistantX.abs() / scaledTileSize).ceil()
+      : 0;
+  int endY = imgEndingPoint.dy > viewPortSize.height + viewportOffset.dy
+      ? (endDistantY.abs() / scaledTileSize).ceil()
+      : 0;
+
+  return (startX: startX, startY: startY, endX: endX, endY: endY);
+}
 
 class MyApp extends StatefulWidget {
   MyApp({super.key});
@@ -34,7 +72,7 @@ class MyApp extends StatefulWidget {
   int endX = 0;
   int startY = 0;
   int endY = 0;
-  int currentZoomLevel = 3;
+  int currentZoomLevel = 1;
 
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
@@ -59,6 +97,16 @@ class _MyAppState extends State<MyApp> {
   Future<void> _loadInitialTiles(int maxX, int maxY) async {
     await _loadTiles(0, maxX, 0, maxY, zoomLevel: widget.currentZoomLevel);
     if (mounted) setState(() {});
+  }
+
+  Size _getCurrentResolution() {
+    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
+        .ceil();
+    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
+        .ceil();
+    double currentScale = tileSize * widget.scale;
+
+    return Size(maxX.toDouble() * currentScale, maxY.toDouble() * currentScale);
   }
 
   Future<void> _loadTiles(
@@ -86,13 +134,27 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  void _zoomIn() {
+    setState(() {
+      widget.scale *= widget.scaleFactor;
+      widget.currentResolution = _getCurrentResolution();
+    });
+  }
+
+  void _zoomOut() {
+    setState(() {
+      widget.scale /= widget.scaleFactor;
+      widget.currentResolution = _getCurrentResolution();
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     widget.screenSize = MediaQuery.of(context).size;
     widget.viewPortSize = Size(
-      widget.screenSize.width - 100,
-      widget.screenSize.height - 100,
+      widget.screenSize.width,
+      widget.screenSize.height,
     );
     // Initial scale to fit viewport
     double scaleX =
@@ -106,21 +168,21 @@ class _MyAppState extends State<MyApp> {
       (widget.screenSize.width / 2) - (widget.viewPortSize.width / 2),
       (widget.screenSize.height / 2) - (widget.viewPortSize.height / 2),
     );
-    widget.initialPos = widget.viewportOffset;
 
+    widget.initialPos = widget.viewportOffset;
+    widget.currentResolution = _getCurrentResolution();
     widget.relativePos = widget.initialPos - widget.viewportOffset;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body:
           widget.image == null || widget.image![widget.currentZoomLevel] == null
           ? Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                Text('''Scale:${widget.scale} \n
-            pos:${widget.relativePos.dx} ${widget.relativePos.dy}'''),
                 SizedBox(
                   width: widget.viewPortSize.width,
                   height: widget.viewPortSize.height,
@@ -128,6 +190,7 @@ class _MyAppState extends State<MyApp> {
                     onTap: () {
                       setState(() {
                         widget.scale *= widget.scaleFactor;
+                        widget.currentResolution = _getCurrentResolution();
                       });
                     },
                     onPanUpdate: (DragUpdateDetails drag) {
@@ -147,6 +210,33 @@ class _MyAppState extends State<MyApp> {
                         relativePos: widget.relativePos,
                         viewportOffset: widget.viewportOffset,
                         zoomLevel: widget.currentZoomLevel,
+                      ),
+                    ),
+                  ),
+                ),
+                //// Controll Panel
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      height: 85,
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Column(
+                        spacing: 1,
+                        children: [
+                          IconButton(
+                            onPressed: _zoomIn,
+                            icon: Icon(Icons.add, color: Colors.white),
+                          ),
+                          IconButton(
+                            onPressed: _zoomOut,
+                            icon: Icon(Icons.minimize, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -192,60 +282,30 @@ class Painter extends CustomPainter {
   }
 
   _drawTiles(Canvas canvas) {
+    final bounds = calculateTileBounds(
+      scale: scale,
+      initialPos: initialPos,
+      viewportOffset: viewportOffset,
+      zoomLevel: zoomLevel,
+      viewPortSize: viewPortSize,
+      relativePos: relativePos,
+    );
+    final startX = bounds.startX;
+    final startY = bounds.startY;
+    final endX = bounds.endX;
+    final endY = bounds.endY;
+
     if (images != null && images!.isNotEmpty) {
-      double scaledTileSize = tileSize * scale;
-
-      double distantX = ((initialPos.dx - viewportOffset.dx)).abs();
-      double distantY = ((initialPos.dy - viewportOffset.dy)).abs();
-
-      int startX = relativePos.dx < 0 ? (distantX / scaledTileSize).floor() : 0;
-      int startY = relativePos.dy < 0 ? (distantY / scaledTileSize).floor() : 0;
-      double totalTileY = (resolutionTable[zoomLevel]!.height / tileSize);
-      double totalTileX = (resolutionTable[zoomLevel]!.width / tileSize);
-
-      Offset imgEndingPoint = Offset(
-        (scaledTileSize * totalTileX) + initialPos.dx - scaledTileSize,
-        (scaledTileSize * totalTileY) + initialPos.dy - scaledTileSize,
-      );
-
-      double endDistantX =
-          (viewPortSize.width + viewportOffset.dx) - imgEndingPoint.dx;
-      double endDistantY =
-          imgEndingPoint.dy - (viewPortSize.height + viewportOffset.dy);
-
-      _debugPoint(
-        canvas,
-        Offset(viewPortSize.width + viewportOffset.dx, viewportOffset.dy),
-        Colors.red,
-      );
-      _debugPoint(canvas, initialPos, Colors.greenAccent);
-      _debugPoint(
-        canvas,
-        initialPos + Offset(0, (scaledTileSize * totalTileY) - scaledTileSize),
-        Colors.indigo,
-      );
-
-      int endX = imgEndingPoint.dx > viewPortSize.width + viewportOffset.dx
-          ? (endDistantX.abs() / scaledTileSize).ceil()
-          : 0;
-
-      int endY = imgEndingPoint.dy > viewPortSize.height + viewportOffset.dy
-          ? (endDistantY.abs() / scaledTileSize).ceil()
-          : 0;
-
-      print("sratt $startY");
-      print("end $endY");
-
       for (int y = startY; y < images!.length - endY; y++) {
         for (int x = startX; x < images![y].length - endX; x++) {
           final tile = images![y][x];
           if (tile != null) {
-            _drawImage(
-              canvas,
-              tile,
-              Offset(x * tileSize.toDouble(), y * tileSize.toDouble()),
-              Size(tile.width * scale, tile.height * scale),
-            );
+            final left = ((x.toDouble() * tileSize * scale)).ceilToDouble();
+            final top = ((y.toDouble() * tileSize * scale)).ceilToDouble();
+            final width = (tile.width.toDouble() * scale).ceilToDouble();
+            final height = (tile.height.toDouble() * scale).ceilToDouble();
+
+            _drawImage(canvas, tile, Offset(left, top), Size(width, height));
           } else {
             canvas.drawRect(
               Rect.fromLTWH(
@@ -254,12 +314,11 @@ class Painter extends CustomPainter {
                 tileSize * scale,
                 tileSize * scale,
               ),
-              Paint()..color = Colors.grey.withOpacity(0.2),
+              Paint()..color = Colors.grey,
             );
           }
         }
       }
-      _debugPoint(canvas, imgEndingPoint, Colors.orange);
     } else {
       _debugPoint(canvas, Offset(20, 10), Colors.greenAccent);
     }
@@ -273,18 +332,23 @@ class Painter extends CustomPainter {
       image.height.toDouble(),
     );
     final dst = Rect.fromLTWH(
-      offset.dx * scale + initialPos.dx,
-      offset.dy * scale + initialPos.dy,
+      offset.dx + initialPos.dx,
+      offset.dy + initialPos.dy,
       size.width,
       size.height,
     );
-    canvas.drawImageRect(image, src, dst, Paint());
-    canvas.drawRect(
+    canvas.drawImageRect(
+      image,
+      src,
       dst,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..color = Colors.red,
+      Paint()..filterQuality = FilterQuality.high,
     );
+    // canvas.drawRect(
+    //   dst,
+    //   Paint()
+    //     ..style = PaintingStyle.stroke
+    //     ..color = Colors.red,
+    // );
   }
 
   _drawViewPort(Canvas canvas) {
