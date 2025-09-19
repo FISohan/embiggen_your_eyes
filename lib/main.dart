@@ -1,10 +1,8 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:embiggen_your_eyes/load_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'dart:io' show Platform;
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
