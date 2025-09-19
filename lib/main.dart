@@ -253,9 +253,9 @@ class _MyAppState extends State<MyApp> {
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: Container(
-                      height: 85,
+                      height: 83,
                       decoration: BoxDecoration(
-                        color: Colors.black45,
+                        color: Colors.black87,
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Column(
@@ -265,6 +265,7 @@ class _MyAppState extends State<MyApp> {
                             onPressed: _zoomIn,
                             icon: Icon(Icons.add, color: Colors.white),
                           ),
+                          
                           IconButton(
                             onPressed: _zoomOut,
                             icon: Icon(Icons.minimize, color: Colors.white),
