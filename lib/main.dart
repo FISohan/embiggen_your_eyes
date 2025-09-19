@@ -223,10 +223,7 @@ class _MyAppState extends State<MyApp> {
 
                           widget.scale *= event.scale;
                           final focal = event.focalPoint;
-                          widget.initialPos =
-                              widget.initialPos -
-                              (focal - widget.initialPos) *
-                                  (newScale / widget.scale - 1);
+                          widget.initialPos += event.focalPointDelta;
 
                           // 3. Apply the new scale
                           widget.scale = newScale;
@@ -265,7 +262,7 @@ class _MyAppState extends State<MyApp> {
                             onPressed: _zoomIn,
                             icon: Icon(Icons.add, color: Colors.white),
                           ),
-                          
+
                           IconButton(
                             onPressed: _zoomOut,
                             icon: Icon(Icons.minimize, color: Colors.white),
