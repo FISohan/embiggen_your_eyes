@@ -1,0 +1,44 @@
+name: Deploy Flutter Web to GitHub Pages
+
+# Controls when the action will run.
+# Triggers the workflow on push events but only for the main branch.
+on:
+  push:
+    branches:
+      - main
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel.
+jobs:
+  build_and_deploy:
+    # The type of runner that the job will run on.
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job.
+    steps:
+      # 1. Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Set up Flutter SDK.
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0' # Use a specific version to ensure consistency
+          channel: 'stable'
+          cache: true # Caches dependencies for faster builds
+
+      # 3. Get Flutter dependencies.
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. Build the Flutter web application.
+      # IMPORTANT: Replace 'embiggen_your_eyes' with your repository name if it's different.
+      - name: Build web app
+        run: flutter build web --release --base-href /embiggen_your_eyes/
+
+      # 5. Deploy the built app to GitHub Pages.
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
