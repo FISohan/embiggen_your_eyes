@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:embiggen_your_eyes/load_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
@@ -24,7 +25,6 @@ final Map<int, Size> resolutionTable = {
   required Offset viewportOffset,
   required int zoomLevel,
   required Size viewPortSize,
-  required Offset relativePos,
 }) {
   double scaledTileSize = tileSize * scale;
 
@@ -43,9 +43,12 @@ final Map<int, Size> resolutionTable = {
   double endDistantY =
       imgEndingPoint.dy - (viewPortSize.height + viewportOffset.dy);
 
-  int startX = relativePos.dx < 0 ? (distantX / scaledTileSize).floor() : 0;
-  int startY = relativePos.dy < 0 ? (distantY / scaledTileSize).floor() : 0;
-
+  int startX = initialPos.dx - viewportOffset.dx < 0
+      ? (distantX / scaledTileSize).floor()
+      : 0;
+  int startY = initialPos.dy - viewportOffset.dy < 0
+      ? (distantY / scaledTileSize).floor()
+      : 0;
   int endX = imgEndingPoint.dx > viewPortSize.width + viewportOffset.dx
       ? (endDistantX.abs() / scaledTileSize).ceil()
       : 0;
@@ -64,7 +67,6 @@ class MyApp extends StatefulWidget {
 
   Size viewPortSize = Size(600, 400);
   Offset initialPos = Offset(0.0, 0.0);
-  Offset relativePos = Offset(0.0, 0.0);
   Size screenSize = Size(0.0, 0.0);
   Size currentResolution = Size(0.0, 0.0);
   Offset viewportOffset = Offset(0.0, 0.0);
@@ -75,6 +77,8 @@ class MyApp extends StatefulWidget {
   int endY = 0;
   int currentZoomLevel = 1;
 
+  bool isLoading = false;
+
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
   @override
@@ -82,9 +86,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
+    _initImages();
 
     // Load tiles for zoom level 1
     int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
@@ -95,60 +102,6 @@ class _MyAppState extends State<MyApp> {
     _loadInitialTiles(maxX, maxY);
   }
 
-  Future<void> _loadInitialTiles(int maxX, int maxY) async {
-    await _loadTiles(0, maxX, 0, maxY, zoomLevel: widget.currentZoomLevel);
-    if (mounted) setState(() {});
-  }
-
-  Size _getCurrentResolution() {
-    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
-        .ceil();
-    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
-        .ceil();
-    double currentScale = tileSize * widget.scale;
-
-    return Size(maxX.toDouble() * currentScale, maxY.toDouble() * currentScale);
-  }
-
-  Future<void> _loadTiles(
-    int startX,
-    int endX,
-    int startY,
-    int endY, {
-    required int zoomLevel,
-  }) async {
-    int maxX = (resolutionTable[zoomLevel]!.width / tileSize).ceil();
-    int maxY = (resolutionTable[zoomLevel]!.height / tileSize).ceil();
-    widget.image![zoomLevel] ??= List.generate(
-      maxY,
-      (_) => List.generate(maxX, (_) => null),
-    );
-
-    for (var y = startY; y < endY; y++) {
-      for (var x = startX; x < endX; x++) {
-        loadNetworkImage(x, y, widget.currentZoomLevel).then((value) {
-          setState(() {
-            widget.image![widget.currentZoomLevel]![y][x] = value;
-          });
-        });
-      }
-    }
-  }
-
-  void _zoomIn() {
-    setState(() {
-      widget.scale *= widget.scaleFactor;
-      widget.currentResolution = _getCurrentResolution();
-    });
-  }
-
-  void _zoomOut() {
-    setState(() {
-      widget.scale /= widget.scaleFactor;
-      widget.currentResolution = _getCurrentResolution();
-    });
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -157,7 +110,6 @@ class _MyAppState extends State<MyApp> {
       widget.screenSize.width,
       widget.screenSize.height,
     );
-    // Initial scale to fit viewport
     double scaleX =
         widget.viewPortSize.width /
         resolutionTable[widget.currentZoomLevel]!.width;
@@ -172,7 +124,148 @@ class _MyAppState extends State<MyApp> {
 
     widget.initialPos = widget.viewportOffset;
     widget.currentResolution = _getCurrentResolution();
-    widget.relativePos = widget.initialPos - widget.viewportOffset;
+  }
+
+  void _initImages() {
+    resolutionTable.forEach((int key, Size value) {
+      int maxX = (value.width / tileSize).ceil();
+      int maxY = (value.height / tileSize).ceil();
+      widget.image![key] ??= List.generate(
+        maxY,
+        (_) => List.generate(maxX, (_) => null),
+      );
+    });
+  }
+
+  Future<void> _loadInitialTiles(int maxX, int maxY) async {
+    await _loadTiles(0, maxX, 0, maxY, zoomLevel: widget.currentZoomLevel);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadTiles(
+    int startX,
+    int endX,
+    int startY,
+    int endY, {
+    required int zoomLevel,
+  }) async {
+    for (var y = startY; y < endY; y++) {
+      for (var x = startX; x < endX; x++) {
+        if (widget.image![zoomLevel]![y][x] == null) {
+          loadNetworkImage(x, y, zoomLevel).then((value) {
+            if (mounted) {
+              setState(() {
+                widget.image![zoomLevel]![y][x] = value;
+              });
+            }
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _loadTilesForCurrentViewport() async {
+    if (widget.currentZoomLevel > 7) return;
+
+    final bound = calculateTileBounds(
+      scale: widget.scale,
+      initialPos: widget.initialPos,
+      viewportOffset: widget.viewportOffset,
+      zoomLevel: widget.currentZoomLevel,
+      viewPortSize: widget.viewPortSize,
+    );
+
+    for (
+      int y = bound.startY;
+      y < widget.image![widget.currentZoomLevel]!.length - bound.endY;
+      y++
+    ) {
+      for (
+        int x = bound.startX;
+        x < widget.image![widget.currentZoomLevel]![y].length - bound.endX;
+        x++
+      ) {
+        if (widget.image![widget.currentZoomLevel]![y][x] == null) {
+          // If the tile is not loaded, check if a lower resolution tile exists
+          // This creates a smoother transition effect
+          if (widget.currentZoomLevel > 1) {
+            final int prevZoomLevel = widget.currentZoomLevel - 1;
+            final int prevX = (x / 2).floor();
+            final int prevY = (y / 2).floor();
+
+            // Check bounds to avoid errors
+            if (prevY >= 0 &&
+                prevY < widget.image![prevZoomLevel]!.length &&
+                prevX >= 0 &&
+                prevX < widget.image![prevZoomLevel]![0].length) {
+              final ui.Image? prevImage =
+                  widget.image![prevZoomLevel]![prevY][prevX];
+              if (prevImage != null) {
+                widget.image![widget.currentZoomLevel]![y][x] = prevImage;
+              }
+            }
+          }
+          loadNetworkImage(x, y, widget.currentZoomLevel).then((value) {
+            if (mounted) {
+              setState(() {
+                widget.image![widget.currentZoomLevel]![y][x] = value;
+              });
+            }
+          });
+        }
+      }
+    }
+  }
+
+  Size _getCurrentResolution() {
+    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
+        .ceil();
+    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
+        .ceil();
+    double currentScale = tileSize * widget.scale;
+    return Size(maxX.toDouble() * currentScale, maxY.toDouble() * currentScale);
+  }
+
+  void _startDebounceTimer() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+      _loadTilesForCurrentViewport();
+    });
+  }
+
+  // Corrected _zoomIn() method
+  void _zoomIn() {
+    if (widget.currentZoomLevel < resolutionTable.length) {
+      setState(() {
+        widget.currentZoomLevel++;
+
+        // Calculate the new image's top-left position
+        // The image size doubles, so the initial position must also be scaled
+        // to keep the same content in view.
+        widget.initialPos = Offset(
+          widget.initialPos.dx * 2,
+          widget.initialPos.dy * 2,
+        );
+
+        _loadTilesForCurrentViewport();
+      });
+    }
+  }
+
+  void _zoomOut() {
+    if (widget.currentZoomLevel > 1) {
+      setState(() {
+        widget.currentZoomLevel--;
+
+        // Halve the initial position to keep the content in view
+        widget.initialPos = Offset(
+          widget.initialPos.dx * -0.5,
+          widget.initialPos.dy * -0.5,
+        );
+
+        _loadTilesForCurrentViewport();
+      });
+    }
   }
 
   @override
@@ -191,42 +284,119 @@ class _MyAppState extends State<MyApp> {
                     onPointerMove: (event) {
                       setState(() {
                         widget.initialPos += event.delta;
+                        _startDebounceTimer();
                       });
                     },
-                    onPointerSignal: (PointerSignalEvent event) {
+                    onPointerSignal: (PointerSignalEvent event) async {
                       if (event is PointerScrollEvent) {
-                        setState(() {
-                          // 1. Determine new scale
-                          double newScale = widget.scale;
-                          if (event.scrollDelta.dy < 0) {
-                            newScale *= widget.scaleFactor; // zoom in
-                          } else if (event.scrollDelta.dy > 0) {
-                            newScale /= widget.scaleFactor; // zoom out
-                          }
+                        double oldScale = widget.scale;
+                        int oldZoomLevel = widget.currentZoomLevel;
 
-                          // 2. Calculate the offset so zoom focuses on pointer
+                        double nextScale = widget.scale;
+                        int nextZoomLevel = oldZoomLevel;
+
+                        if (event.scrollDelta.dy < 0) {
+                          nextScale *= widget.scaleFactor;
+                        } else if (event.scrollDelta.dy > 0) {
+                          nextScale /= widget.scaleFactor;
+                        }
+
+                        if (nextScale >= 2.0 &&
+                            nextZoomLevel < resolutionTable.length) {
+                          nextZoomLevel++;
+                          nextScale = nextScale / 2.0;
+                        } else if (nextScale < 0.5 && nextZoomLevel > 1) {
+                          nextZoomLevel--;
+                          nextScale = nextScale * 2.0;
+                        }
+
+                        Offset newInitialPos = widget.initialPos;
+                        if (nextZoomLevel != oldZoomLevel) {
+                          // Calculate new position based on the center of the viewport
+                          final double centerDx = widget.viewPortSize.width / 2;
+                          final double centerDy =
+                              widget.viewPortSize.height / 2;
+                          final Offset center = Offset(centerDx, centerDy);
+
+                          // Old image point at the center of the viewport
+                          final Offset oldImagePoint =
+                              (center - widget.initialPos) / oldScale;
+
+                          // New initial position to keep that point at the center
+                          newInitialPos = center - oldImagePoint * nextScale;
+                        } else {
+                          // Standard focal point calculation
                           final focal = event.localPosition;
-                          widget.initialPos =
+                          newInitialPos =
                               widget.initialPos -
                               (focal - widget.initialPos) *
-                                  (newScale / widget.scale - 1);
+                                  (nextScale / oldScale - 1);
+                        }
 
-                          // 3. Apply the new scale
-                          widget.scale = newScale;
+                        setState(() {
+                          widget.initialPos = newInitialPos;
+                          widget.scale = nextScale;
+                          widget.currentZoomLevel = nextZoomLevel;
                         });
+
+                        if (oldZoomLevel != widget.currentZoomLevel) {
+                          _loadTilesForCurrentViewport();
+                        } else {
+                          _startDebounceTimer();
+                        }
                       }
                     },
                     child: GestureDetector(
-                      onScaleUpdate: (ScaleUpdateDetails event) {
+                      onScaleUpdate: (ScaleUpdateDetails details) {
+                        double oldScale = widget.scale;
+                        int oldZoomLevel = widget.currentZoomLevel;
+
+                        double nextScale = widget.scale * details.scale;
+                        int nextZoomLevel = oldZoomLevel;
+
+                        if (nextScale >= 2.0 &&
+                            nextZoomLevel < resolutionTable.length) {
+                          nextZoomLevel++;
+                          nextScale = nextScale / 2.0;
+                        } else if (nextScale < 0.5 && nextZoomLevel > 1) {
+                          nextZoomLevel--;
+                          nextScale = nextScale * 2.0;
+                        }
+
+                        Offset newInitialPos = widget.initialPos;
+                        if (nextZoomLevel != oldZoomLevel) {
+                          // Calculate new position based on the center of the viewport
+                          final double centerDx = widget.viewPortSize.width / 2;
+                          final double centerDy =
+                              widget.viewPortSize.height / 2;
+                          final Offset center = Offset(centerDx, centerDy);
+
+                          // Old image point at the center of the viewport
+                          final Offset oldImagePoint =
+                              (center - widget.initialPos) / oldScale;
+
+                          // New initial position to keep that point at the center
+                          newInitialPos = center - oldImagePoint * nextScale;
+                        } else {
+                          // Standard focal point calculation
+                          final focal = details.focalPoint;
+                          newInitialPos =
+                              widget.initialPos -
+                              (focal - widget.initialPos) *
+                                  (nextScale / oldScale - 1);
+                        }
+
                         setState(() {
-                          double newScale = widget.scale;
-
-                          widget.scale *= event.scale * widget.scaleFactor;
-                          widget.initialPos += event.focalPointDelta;
-
-                          // 3. Apply the new scale
-                          widget.scale = newScale;
+                          widget.initialPos = newInitialPos;
+                          widget.scale = nextScale;
+                          widget.currentZoomLevel = nextZoomLevel;
                         });
+
+                        if (oldZoomLevel != widget.currentZoomLevel) {
+                          _loadTilesForCurrentViewport();
+                        } else {
+                          _startDebounceTimer();
+                        }
                       },
                       child: CustomPaint(
                         painter: Painter(
@@ -235,37 +405,48 @@ class _MyAppState extends State<MyApp> {
                           initialPos: widget.initialPos,
                           viewPortSize: widget.viewPortSize,
                           images: widget.image![widget.currentZoomLevel],
-                          relativePos: widget.relativePos,
                           viewportOffset: widget.viewportOffset,
                           zoomLevel: widget.currentZoomLevel,
+                          onLoadTileRequest: (_) {},
                         ),
                       ),
                     ),
                   ),
                 ),
-                //// Controll Panel
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(18.0),
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: Container(
-                      height: 83,
+                      height: 145,
                       decoration: BoxDecoration(
                         color: Colors.black87,
                         borderRadius: BorderRadius.circular(5),
                       ),
-                      child: Column(
-                        spacing: 1,
+                      child: Wrap(
+                        direction: Axis.vertical,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 10,
                         children: [
                           IconButton(
                             onPressed: _zoomIn,
                             icon: Icon(Icons.add, color: Colors.white),
                           ),
-
                           IconButton(
                             onPressed: _zoomOut,
                             icon: Icon(Icons.minimize, color: Colors.white),
                           ),
+                          Text(
+                            "${widget.currentZoomLevel}x",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          widget.isLoading
+                              ? SizedBox(
+                                  height: 10,
+                                  width: 10,
+                                  child: CircularProgressIndicator(),
+                                )
+                              : SizedBox.square(dimension: 0),
                         ],
                       ),
                     ),
@@ -282,11 +463,11 @@ class Painter extends CustomPainter {
   final Size viewPortSize;
   late final Size imgResolution;
   final double scale;
-  final Offset relativePos;
   final Offset viewportOffset;
   final Offset initialPos;
   final int zoomLevel;
   final List<List<ui.Image?>>? images;
+  final void Function(Point point) onLoadTileRequest;
 
   Painter({
     required this.screenSize,
@@ -295,13 +476,12 @@ class Painter extends CustomPainter {
     required this.viewPortSize,
     required this.images,
     required this.viewportOffset,
-    required this.relativePos,
     required this.zoomLevel,
+    required this.onLoadTileRequest,
   }) {
     imgResolution = Size(
-      resolutionTable[2]!.aspectRatio.toDouble() *
-          (viewPortSize.height.toDouble() - 100),
-      viewPortSize.height.toDouble() - 100,
+      resolutionTable[zoomLevel]?.width ?? 0,
+      resolutionTable[zoomLevel]?.height ?? 0,
     );
   }
 
@@ -312,29 +492,27 @@ class Painter extends CustomPainter {
   }
 
   _drawTiles(Canvas canvas) {
-    final bounds = calculateTileBounds(
-      scale: scale,
-      initialPos: initialPos,
-      viewportOffset: viewportOffset,
-      zoomLevel: zoomLevel,
-      viewPortSize: viewPortSize,
-      relativePos: relativePos,
-    );
-    final startX = bounds.startX;
-    final startY = bounds.startY;
-    final endX = bounds.endX;
-    final endY = bounds.endY;
-
     if (images != null && images!.isNotEmpty) {
+      final bounds = calculateTileBounds(
+        scale: scale,
+        initialPos: initialPos,
+        viewportOffset: viewportOffset,
+        zoomLevel: zoomLevel,
+        viewPortSize: viewPortSize,
+      );
+      final startX = bounds.startX;
+      final startY = bounds.startY;
+      final endX = bounds.endX;
+      final endY = bounds.endY;
+
       for (int y = startY; y < images!.length - endY; y++) {
         for (int x = startX; x < images![y].length - endX; x++) {
           final tile = images![y][x];
           if (tile != null) {
-            final left = ((x.toDouble() * tileSize * scale)).ceilToDouble();
-            final top = ((y.toDouble() * tileSize * scale)).ceilToDouble();
+            final left = (x.toDouble() * tileSize * scale).floorToDouble();
+            final top = (y.toDouble() * tileSize * scale).floorToDouble();
             final width = (tile.width.toDouble() * scale).ceilToDouble();
             final height = (tile.height.toDouble() * scale).ceilToDouble();
-
             _drawImage(canvas, tile, Offset(left, top), Size(width, height));
           } else {
             canvas.drawRect(
@@ -373,12 +551,6 @@ class Painter extends CustomPainter {
       dst,
       Paint()..filterQuality = FilterQuality.high,
     );
-    // canvas.drawRect(
-    //   dst,
-    //   Paint()
-    //     ..style = PaintingStyle.stroke
-    //     ..color = Colors.red,
-    // );
   }
 
   _drawViewPort(Canvas canvas) {
@@ -392,7 +564,7 @@ class Painter extends CustomPainter {
       viewportRect,
       Paint()
         ..style = PaintingStyle.stroke
-        ..color = Colors.black,
+        ..color = Colors.white,
     );
   }
 
