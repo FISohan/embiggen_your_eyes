@@ -87,14 +87,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Timer? _debounceTimer;
+  Set<Point<int>> _currentVisibleTiles = {};
 
   @override
   void initState() {
     super.initState();
     _initImages();
 
-    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize).ceil();
-    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize).ceil();
+    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
+        .ceil();
+    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
+        .ceil();
 
     _loadInitialTiles(maxX, maxY);
   }
@@ -107,8 +110,12 @@ class _MyAppState extends State<MyApp> {
       widget.screenSize.width,
       widget.screenSize.height,
     );
-    double scaleX = widget.viewPortSize.width / resolutionTable[widget.currentZoomLevel]!.width;
-    double scaleY = widget.viewPortSize.height / resolutionTable[widget.currentZoomLevel]!.height;
+    double scaleX =
+        widget.viewPortSize.width /
+        resolutionTable[widget.currentZoomLevel]!.width;
+    double scaleY =
+        widget.viewPortSize.height /
+        resolutionTable[widget.currentZoomLevel]!.height;
     widget.scale = min(scaleX, scaleY);
     widget.viewportOffset = Offset(
       (widget.screenSize.width / 2) - (widget.viewPortSize.width / 2),
@@ -182,6 +189,30 @@ class _MyAppState extends State<MyApp> {
       viewPortSize: widget.viewPortSize,
     );
 
+    final newVisibleTiles = <Point<int>>{};
+    for (int y = bound.startY; y < bound.endY; y++) {
+      for (int x = bound.startX; x < bound.endX; x++) {
+        newVisibleTiles.add(Point(x, y));
+      }
+    }
+
+    // // Identify tiles that are no longer visible and remove them from the cache
+    // final tilesToRemove = _currentVisibleTiles.difference(newVisibleTiles);
+    // for (final tilePoint in tilesToRemove) {
+    //   // You'll need to know the zoom level of the tile to remove it correctly
+    //   // This assumes you're only removing tiles from the *previous* zoom level
+    //   if (widget.image![widget.currentZoomLevel] != null &&
+    //       widget.image![widget.currentZoomLevel]!.length > tilePoint.y &&
+    //       widget.image![widget.currentZoomLevel]![tilePoint.y].length >
+    //           tilePoint.x) {
+    //     widget.image![widget.currentZoomLevel]![tilePoint.y][tilePoint.x] =
+    //         null;
+    //   }
+    // }
+
+    // // Update the list of current visible tiles
+    // _currentVisibleTiles = newVisibleTiles;
+
     final currentVisibleTiles = <Point<int>>{};
     for (
       int y = bound.startY;
@@ -196,9 +227,9 @@ class _MyAppState extends State<MyApp> {
         currentVisibleTiles.add(Point(x, y));
       }
     }
-    
+
     bool allCurrentTilesLoaded = true;
-    for(final tile in currentVisibleTiles) {
+    for (final tile in currentVisibleTiles) {
       if (widget.image![widget.currentZoomLevel]![tile.y][tile.x] == null) {
         allCurrentTilesLoaded = false;
         loadNetworkImage(tile.x, tile.y, widget.currentZoomLevel).then((value) {
@@ -211,36 +242,38 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    if (allCurrentTilesLoaded) {
-      final nextZoomLevel = widget.currentZoomLevel + 1;
-      final nextTilesToLoad = <Point<int>>{};
-      
-      for (final tile in currentVisibleTiles) {
-        final nextTiles = getNextZoomTiles(tile.x, tile.y);
-        nextTilesToLoad.addAll(nextTiles);
-      }
-      
-      for (final tile in nextTilesToLoad) {
-        if (tile.y >= 0 &&
-            tile.y < widget.image![nextZoomLevel]!.length &&
-            tile.x >= 0 &&
-            tile.x < widget.image![nextZoomLevel]![0].length &&
-            widget.image![nextZoomLevel]![tile.y][tile.x] == null) {
-          loadNetworkImage(tile.x, tile.y, nextZoomLevel).then((value) {
-            if (mounted) {
-              setState(() {
-                widget.image![nextZoomLevel]![tile.y][tile.x] = value;
-              });
-            }
-          });
-        }
-      }
-    }
-}
-   
+    // if (allCurrentTilesLoaded) {
+    //   final nextZoomLevel = widget.currentZoomLevel + 1;
+    //   final nextTilesToLoad = <Point<int>>{};
+
+    //   for (final tile in currentVisibleTiles) {
+    //     final nextTiles = getNextZoomTiles(tile.x, tile.y);
+    //     nextTilesToLoad.addAll(nextTiles);
+    //   }
+
+    //   for (final tile in nextTilesToLoad) {
+    //     if (tile.y >= 0 &&
+    //         tile.y < widget.image![nextZoomLevel]!.length &&
+    //         tile.x >= 0 &&
+    //         tile.x < widget.image![nextZoomLevel]![0].length &&
+    //         widget.image![nextZoomLevel]![tile.y][tile.x] == null) {
+    //       loadNetworkImage(tile.x, tile.y, nextZoomLevel).then((value) {
+    //         if (mounted) {
+    //           setState(() {
+    //             widget.image![nextZoomLevel]![tile.y][tile.x] = value;
+    //           });
+    //         }
+    //       });
+    //     }
+    //   }
+    // }
+  }
+
   Size _getCurrentResolution() {
-    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize).ceil();
-    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize).ceil();
+    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
+        .ceil();
+    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
+        .ceil();
     double currentScale = tileSize * widget.scale;
     return Size(maxX.toDouble() * currentScale, maxY.toDouble() * currentScale);
   }
@@ -255,21 +288,27 @@ class _MyAppState extends State<MyApp> {
   void _zoomIn() {
     if (widget.currentZoomLevel < resolutionTable.length) {
       setState(() {
+        final oldScale = widget.scale;
         final oldZoomLevel = widget.currentZoomLevel;
-        widget.currentZoomLevel++;
-        
-        final center = Offset(
+        final focal = Offset(
           widget.viewportOffset.dx + widget.viewPortSize.width / 2,
           widget.viewportOffset.dy + widget.viewPortSize.height / 2,
         );
 
-        final oldImagePoint = (center - widget.initialPos) / widget.scale;
-        
-        widget.scale = 1.0; 
-        
-        final scaleChange = 2.0;
-        widget.initialPos = center - oldImagePoint * scaleChange;
-        
+        // Update zoom level and scale
+        final nextZoomLevel = oldZoomLevel + 1;
+        final nextScale = 1.0;
+
+        // Correct focal point calculation for discrete zoom levels
+        final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
+        final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
+        final imagePoint = (focal - widget.initialPos) / oldTotalScale;
+        final newInitialPos = focal - imagePoint * nextTotalScale;
+
+        widget.initialPos = newInitialPos;
+        widget.scale = nextScale;
+        widget.currentZoomLevel = nextZoomLevel;
+
         _loadTilesForCurrentViewport();
       });
     }
@@ -278,20 +317,26 @@ class _MyAppState extends State<MyApp> {
   void _zoomOut() {
     if (widget.currentZoomLevel > 1) {
       setState(() {
+        final oldScale = widget.scale;
         final oldZoomLevel = widget.currentZoomLevel;
-        widget.currentZoomLevel--;
-        
-        final center = Offset(
+        final focal = Offset(
           widget.viewportOffset.dx + widget.viewPortSize.width / 2,
           widget.viewportOffset.dy + widget.viewPortSize.height / 2,
         );
 
-        final oldImagePoint = (center - widget.initialPos) / widget.scale;
-        
-        widget.scale = 1.0; 
-        
-        final scaleChange = 0.5;
-        widget.initialPos = center - oldImagePoint * scaleChange;
+        // Update zoom level and scale
+        final nextZoomLevel = oldZoomLevel - 1;
+        final nextScale = 1.0;
+
+        // Correct focal point calculation for discrete zoom levels
+        final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
+        final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
+        final imagePoint = (focal - widget.initialPos) / oldTotalScale;
+        final newInitialPos = focal - imagePoint * nextTotalScale;
+
+        widget.initialPos = newInitialPos;
+        widget.scale = nextScale;
+        widget.currentZoomLevel = nextZoomLevel;
 
         _loadTilesForCurrentViewport();
       });
@@ -302,7 +347,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: widget.image == null || widget.image![widget.currentZoomLevel] == null
+      body:
+          widget.image == null || widget.image![widget.currentZoomLevel] == null
           ? Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -320,7 +366,7 @@ class _MyAppState extends State<MyApp> {
                       if (event is PointerScrollEvent) {
                         final oldScale = widget.scale;
                         final oldZoomLevel = widget.currentZoomLevel;
-                        
+
                         double nextScale = widget.scale;
                         int nextZoomLevel = oldZoomLevel;
 
@@ -330,9 +376,10 @@ class _MyAppState extends State<MyApp> {
                           nextScale /= widget.scaleFactor;
                         }
 
-                        if (nextScale >= 2.0 && nextZoomLevel < resolutionTable.length) {
+                        if (nextScale >= 2.0 &&
+                            nextZoomLevel < resolutionTable.length) {
                           nextZoomLevel++;
-                          nextScale = nextScale / 2.0; 
+                          nextScale = nextScale / 2.0;
                         } else if (nextScale < 0.5 && nextZoomLevel > 1) {
                           nextZoomLevel--;
                           nextScale = nextScale * 2.0;
@@ -342,15 +389,19 @@ class _MyAppState extends State<MyApp> {
                         final focal = event.localPosition;
 
                         if (nextZoomLevel != oldZoomLevel) {
-                          final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
-                          final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
-                          final imagePoint = (focal - widget.initialPos) / oldTotalScale;
+                          final oldTotalScale =
+                              oldScale * pow(2, oldZoomLevel - 1);
+                          final nextTotalScale =
+                              nextScale * pow(2, nextZoomLevel - 1);
+                          final imagePoint =
+                              (focal - widget.initialPos) / oldTotalScale;
                           newInitialPos = focal - imagePoint * nextTotalScale;
                         } else {
                           final scaleChange = nextScale / oldScale;
-                          newInitialPos = focal - (focal - widget.initialPos) * scaleChange;
+                          newInitialPos =
+                              focal - (focal - widget.initialPos) * scaleChange;
                         }
-                        
+
                         setState(() {
                           widget.initialPos = newInitialPos;
                           widget.scale = nextScale;
@@ -358,9 +409,9 @@ class _MyAppState extends State<MyApp> {
                         });
 
                         if (oldZoomLevel != widget.currentZoomLevel) {
-                           _loadTilesForCurrentViewport();
+                          _loadTilesForCurrentViewport();
                         } else {
-                           _startDebounceTimer();
+                          _startDebounceTimer();
                         }
                       }
                     },
@@ -371,8 +422,9 @@ class _MyAppState extends State<MyApp> {
 
                         double nextScale = widget.scale * details.scale;
                         int nextZoomLevel = oldZoomLevel;
-                        
-                        if (nextScale >= 2.0 && nextZoomLevel < resolutionTable.length) {
+
+                        if (nextScale >= 2.0 &&
+                            nextZoomLevel < resolutionTable.length) {
                           nextZoomLevel++;
                           nextScale = nextScale / 2.0;
                         } else if (nextScale < 0.5 && nextZoomLevel > 1) {
@@ -382,27 +434,31 @@ class _MyAppState extends State<MyApp> {
 
                         Offset newInitialPos;
                         final focal = details.focalPoint;
-                        
+
                         if (nextZoomLevel != oldZoomLevel) {
-                          final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
-                          final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
-                          final imagePoint = (focal - widget.initialPos) / oldTotalScale;
+                          final oldTotalScale =
+                              oldScale * pow(2, oldZoomLevel - 1);
+                          final nextTotalScale =
+                              nextScale * pow(2, nextZoomLevel - 1);
+                          final imagePoint =
+                              (focal - widget.initialPos) / oldTotalScale;
                           newInitialPos = focal - imagePoint * nextTotalScale;
                         } else {
                           final scaleChange = nextScale / oldScale;
-                          newInitialPos = focal - (focal - widget.initialPos) * scaleChange;
+                          newInitialPos =
+                              focal - (focal - widget.initialPos) * scaleChange;
                         }
-                        
+
                         setState(() {
                           widget.initialPos = newInitialPos;
                           widget.scale = nextScale;
                           widget.currentZoomLevel = nextZoomLevel;
                         });
-                        
+
                         if (oldZoomLevel != widget.currentZoomLevel) {
-                           _loadTilesForCurrentViewport();
+                          _loadTilesForCurrentViewport();
                         } else {
-                           _startDebounceTimer();
+                          _startDebounceTimer();
                         }
                       },
                       child: CustomPaint(
