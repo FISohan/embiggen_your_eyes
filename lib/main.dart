@@ -179,7 +179,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _loadTilesForCurrentViewport() async {
-    if (widget.currentZoomLevel >= 7) return;
+    if (widget.currentZoomLevel > 7) return;
 
     final bound = calculateTileBounds(
       scale: widget.scale,
@@ -242,31 +242,31 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    // if (allCurrentTilesLoaded) {
-    //   final nextZoomLevel = widget.currentZoomLevel + 1;
-    //   final nextTilesToLoad = <Point<int>>{};
+    if (allCurrentTilesLoaded) {
+      final nextZoomLevel = widget.currentZoomLevel + 1;
+      final nextTilesToLoad = <Point<int>>{};
 
-    //   for (final tile in currentVisibleTiles) {
-    //     final nextTiles = getNextZoomTiles(tile.x, tile.y);
-    //     nextTilesToLoad.addAll(nextTiles);
-    //   }
+      for (final tile in currentVisibleTiles) {
+        final nextTiles = getNextZoomTiles(tile.x, tile.y);
+        nextTilesToLoad.addAll(nextTiles);
+      }
 
-    //   for (final tile in nextTilesToLoad) {
-    //     if (tile.y >= 0 &&
-    //         tile.y < widget.image![nextZoomLevel]!.length &&
-    //         tile.x >= 0 &&
-    //         tile.x < widget.image![nextZoomLevel]![0].length &&
-    //         widget.image![nextZoomLevel]![tile.y][tile.x] == null) {
-    //       loadNetworkImage(tile.x, tile.y, nextZoomLevel).then((value) {
-    //         if (mounted) {
-    //           setState(() {
-    //             widget.image![nextZoomLevel]![tile.y][tile.x] = value;
-    //           });
-    //         }
-    //       });
-    //     }
-    //   }
-    // }
+      for (final tile in nextTilesToLoad) {
+        if (tile.y >= 0 &&
+            tile.y < widget.image![nextZoomLevel]!.length &&
+            tile.x >= 0 &&
+            tile.x < widget.image![nextZoomLevel]![0].length &&
+            widget.image![nextZoomLevel]![tile.y][tile.x] == null) {
+          loadNetworkImage(tile.x, tile.y, nextZoomLevel).then((value) {
+            if (mounted) {
+              setState(() {
+                widget.image![nextZoomLevel]![tile.y][tile.x] = value;
+              });
+            }
+          });
+        }
+      }
+    }
   }
 
   Size _getCurrentResolution() {
@@ -291,8 +291,8 @@ class _MyAppState extends State<MyApp> {
         final oldScale = widget.scale;
         final oldZoomLevel = widget.currentZoomLevel;
         final focal = Offset(
-          widget.viewportOffset.dx + widget.viewPortSize.width / 2,
-          widget.viewportOffset.dy + widget.viewPortSize.height / 2,
+          widget.viewportOffset.dx + widget.viewPortSize.width / 2.0,
+          widget.viewportOffset.dy + widget.viewPortSize.height / 2.0,
         );
 
         // Update zoom level and scale
@@ -300,8 +300,9 @@ class _MyAppState extends State<MyApp> {
         final nextScale = 1.0;
 
         // Correct focal point calculation for discrete zoom levels
-        final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
-        final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
+        final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
+        final nextTotalScale =
+            nextScale * resolutionTable[nextZoomLevel]!.width;
         final imagePoint = (focal - widget.initialPos) / oldTotalScale;
         final newInitialPos = focal - imagePoint * nextTotalScale;
 
@@ -329,8 +330,9 @@ class _MyAppState extends State<MyApp> {
         final nextScale = 1.0;
 
         // Correct focal point calculation for discrete zoom levels
-        final oldTotalScale = oldScale * pow(2, oldZoomLevel - 1);
-        final nextTotalScale = nextScale * pow(2, nextZoomLevel - 1);
+        final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
+        final nextTotalScale =
+            nextScale * resolutionTable[nextZoomLevel]!.width;
         final imagePoint = (focal - widget.initialPos) / oldTotalScale;
         final newInitialPos = focal - imagePoint * nextTotalScale;
 
@@ -390,9 +392,9 @@ class _MyAppState extends State<MyApp> {
 
                         if (nextZoomLevel != oldZoomLevel) {
                           final oldTotalScale =
-                              oldScale * pow(2, oldZoomLevel - 1);
+                              oldScale * resolutionTable[oldZoomLevel]!.width;
                           final nextTotalScale =
-                              nextScale * pow(2, nextZoomLevel - 1);
+                              nextScale * resolutionTable[nextZoomLevel]!.width;
                           final imagePoint =
                               (focal - widget.initialPos) / oldTotalScale;
                           newInitialPos = focal - imagePoint * nextTotalScale;
@@ -437,9 +439,9 @@ class _MyAppState extends State<MyApp> {
 
                         if (nextZoomLevel != oldZoomLevel) {
                           final oldTotalScale =
-                              oldScale * pow(2, oldZoomLevel - 1);
+                              oldScale * resolutionTable[oldZoomLevel]!.width;
                           final nextTotalScale =
-                              nextScale * pow(2, nextZoomLevel - 1);
+                              nextScale * resolutionTable[nextZoomLevel]!.width;
                           final imagePoint =
                               (focal - widget.initialPos) / oldTotalScale;
                           newInitialPos = focal - imagePoint * nextTotalScale;
