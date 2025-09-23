@@ -38,26 +38,8 @@ class Painter extends CustomPainter {
   void paint(ui.Canvas canvas, ui.Size size) {
     _drawViewPort(canvas);
     _drawTiles(canvas);
-
-    for (int i = 0; i < labels.length; i++) {
-      if (labels[i] != null) {
-        Offset pos =
-            imageToScreenSpace(
-              normalizedPos: labels[i]!.pos,
-              currentImageRes:_getCurrentResolution(),
-            ) +
-            initialPos;
-
-        _debugPoint(canvas, pos, Colors.red);
-      }
-    }
   }
 
-  Size _getCurrentResolution() {
-    double w = resolutionTable[zoomLevel]!.width;
-    double h = resolutionTable[zoomLevel]!.height;
-    return Size(w*scale,h*scale);
-  }
 
   _drawTiles(Canvas canvas) {
     if (images != null && images!.isNotEmpty) {

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:embiggen_your_eyes/card.dart';
 import 'package:embiggen_your_eyes/convert.dart';
 import 'package:embiggen_your_eyes/lebel.dart';
 import 'package:embiggen_your_eyes/load_image.dart';
@@ -85,6 +86,8 @@ class MyApp extends StatefulWidget {
   Rect? lebelRect = null;
   Point<double>? labelPos = null;
   List<Lebel> labels = [];
+  bool showCustomLabelUi = false;
+  int currentLabelIndex = -1;
 
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
@@ -345,33 +348,28 @@ class _MyAppState extends State<MyApp> {
                   width: widget.viewPortSize.width,
                   height: widget.viewPortSize.height,
                   child: Listener(
-                    onPointerMove: (event) {
-                      setState(() {
-                        widget.initialPos += event.delta;
-                        _startDebounceTimer();
-                      });
-                    },
-                    onPointerUp: (event) {
+                    onPointerDown: (event) {
                       if (widget.isLebelInput) {
                         setState(() {
                           Lebel lebel = Lebel(
                             pos: screenToImageSpace(
-                              imageCurrentRes:
-                                 _getCurrentResolution(),
+                              imageCurrentRes: _getCurrentResolution(),
                               imageOffset: widget.initialPos,
-                              pointerLocation: event.position,
-                              scale: widget.scale
+                              pointerLocation: event.localPosition,
+                              scale: widget.scale,
                             ),
                             originalSize: _getCurrentResolution(),
                           );
 
                           widget.labels.add(lebel);
                         });
-                        print(widget.labels.length);
                       }
                     },
-                    onPointerDown: (event) {
-                      print('Down');
+                    onPointerMove: (event) {
+                      setState(() {
+                        widget.initialPos += event.delta;
+                        _startDebounceTimer();
+                      });
                     },
                     onPointerSignal: (PointerSignalEvent event) async {
                       if (event is PointerScrollEvent) {
@@ -426,6 +424,11 @@ class _MyAppState extends State<MyApp> {
                       }
                     },
                     child: GestureDetector(
+                      onTapUp: (details) {
+                        setState(() {
+                          widget.showCustomLabelUi = true;
+                        });
+                      },
                       onScaleUpdate: (ScaleUpdateDetails details) {
                         final oldScale = widget.scale;
                         final oldZoomLevel = widget.currentZoomLevel;
@@ -491,24 +494,32 @@ class _MyAppState extends State<MyApp> {
                   padding: const EdgeInsets.all(18.0),
                   child: Align(
                     alignment: Alignment.bottomRight,
+
                     child: Container(
-                      height: 145,
                       decoration: BoxDecoration(
                         color: Colors.black87,
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Wrap(
-                        direction: Axis.vertical,
+                        direction: Axis.horizontal,
+                        alignment: WrapAlignment.spaceBetween,
+
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 10,
                         children: [
                           IconButton(
                             onPressed: _zoomIn,
-                            icon: Icon(Icons.add, color: Colors.white),
+                            icon: Icon(
+                              Icons.zoom_in_sharp,
+                              color: Colors.white,
+                            ),
                           ),
                           IconButton(
                             onPressed: _zoomOut,
-                            icon: Icon(Icons.minimize, color: Colors.white),
+                            icon: Icon(
+                              Icons.zoom_out_sharp,
+                              color: Colors.white,
+                            ),
                           ),
                           Text(
                             "${widget.currentZoomLevel}x",
@@ -516,6 +527,7 @@ class _MyAppState extends State<MyApp> {
                           ),
                           Switch(
                             value: widget.isLebelInput,
+
                             onChanged: (v) {
                               setState(() {
                                 widget.isLebelInput = v;
@@ -527,6 +539,84 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ),
+
+                if (widget.showCustomLabelUi && widget.currentLabelIndex != -1)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+
+                      child: BlurryCard(
+                        editable:
+                            widget.labels[widget.currentLabelIndex].title ==
+                            null,
+                        onClosePressed: () {
+                          setState(() {
+                            widget.showCustomLabelUi = false;
+                          });
+                        },
+                        boxValueChange: (width, height) {
+                          print(width * height);
+                        },
+                        onAddLabel: (title, description, width, height) {
+                          Lebel current =
+                              widget.labels[widget.currentLabelIndex];
+                          setState(() {
+                            widget.labels[widget.currentLabelIndex] = Lebel(
+                              pos: current.pos,
+                              originalSize: current.originalSize,
+                              title: title,
+                              boundingBox: Size(width, height),
+                              description: description,
+                            );
+                            widget.currentLabelIndex = -1;
+                          });
+                        },
+                        title:
+                            widget.labels[widget.currentLabelIndex].title ?? "",
+                        description:
+                            widget
+                                .labels[widget.currentLabelIndex]
+                                .description ??
+                            "",
+                      ),
+                    ),
+                  ),
+
+                for (int i = 0; i < widget.labels.length; i++)
+                  Positioned(
+                    left:
+                        imageToScreenSpace(
+                          normalizedPos: widget.labels[i].pos,
+                          currentImageRes: _getCurrentResolution(),
+                        ).dx +
+                        widget.initialPos.dx -
+                        10.0,
+                    top:
+                        imageToScreenSpace(
+                          normalizedPos: widget.labels[i].pos,
+                          currentImageRes: _getCurrentResolution(),
+                        ).dy +
+                        widget.initialPos.dy -
+                        10.0,
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: IconButton(
+                        padding: EdgeInsets.all(0),
+                        onPressed: () {
+                          setState(() {
+                            widget.showCustomLabelUi = true;
+                            widget.currentLabelIndex = i;
+                          });
+                        },
+                        icon: Icon(
+                          Icons.my_location_sharp,
+                          grade: 10,
+                          color: Colors.lightGreenAccent.withAlpha(200),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
     );
