@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:embiggen_your_eyes/convert.dart';
+import 'package:embiggen_your_eyes/lebel.dart';
 import 'package:embiggen_your_eyes/load_image.dart';
+import 'package:embiggen_your_eyes/painter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -78,6 +81,10 @@ class MyApp extends StatefulWidget {
   int currentZoomLevel = 1;
 
   bool isLoading = false;
+  bool isLebelInput = false;
+  Rect? lebelRect = null;
+  Point<double>? labelPos = null;
+  List<Lebel> labels = [];
 
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
@@ -196,23 +203,6 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    // // Identify tiles that are no longer visible and remove them from the cache
-    // final tilesToRemove = _currentVisibleTiles.difference(newVisibleTiles);
-    // for (final tilePoint in tilesToRemove) {
-    //   // You'll need to know the zoom level of the tile to remove it correctly
-    //   // This assumes you're only removing tiles from the *previous* zoom level
-    //   if (widget.image![widget.currentZoomLevel] != null &&
-    //       widget.image![widget.currentZoomLevel]!.length > tilePoint.y &&
-    //       widget.image![widget.currentZoomLevel]![tilePoint.y].length >
-    //           tilePoint.x) {
-    //     widget.image![widget.currentZoomLevel]![tilePoint.y][tilePoint.x] =
-    //         null;
-    //   }
-    // }
-
-    // // Update the list of current visible tiles
-    // _currentVisibleTiles = newVisibleTiles;
-
     final currentVisibleTiles = <Point<int>>{};
     for (
       int y = bound.startY;
@@ -270,12 +260,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   Size _getCurrentResolution() {
-    int maxX = (resolutionTable[widget.currentZoomLevel]!.width / tileSize)
-        .ceil();
-    int maxY = (resolutionTable[widget.currentZoomLevel]!.height / tileSize)
-        .ceil();
-    double currentScale = tileSize * widget.scale;
-    return Size(maxX.toDouble() * currentScale, maxY.toDouble() * currentScale);
+    double w = resolutionTable[widget.currentZoomLevel]!.width;
+    double h = resolutionTable[widget.currentZoomLevel]!.height;
+    return Size(w * widget.scale, h * widget.scale);
   }
 
   void _startDebounceTimer() {
@@ -364,6 +351,28 @@ class _MyAppState extends State<MyApp> {
                         _startDebounceTimer();
                       });
                     },
+                    onPointerUp: (event) {
+                      if (widget.isLebelInput) {
+                        setState(() {
+                          Lebel lebel = Lebel(
+                            pos: screenToImageSpace(
+                              imageCurrentRes:
+                                 _getCurrentResolution(),
+                              imageOffset: widget.initialPos,
+                              pointerLocation: event.position,
+                              scale: widget.scale
+                            ),
+                            originalSize: _getCurrentResolution(),
+                          );
+
+                          widget.labels.add(lebel);
+                        });
+                        print(widget.labels.length);
+                      }
+                    },
+                    onPointerDown: (event) {
+                      print('Down');
+                    },
                     onPointerSignal: (PointerSignalEvent event) async {
                       if (event is PointerScrollEvent) {
                         final oldScale = widget.scale;
@@ -409,7 +418,6 @@ class _MyAppState extends State<MyApp> {
                           widget.scale = nextScale;
                           widget.currentZoomLevel = nextZoomLevel;
                         });
-
                         if (oldZoomLevel != widget.currentZoomLevel) {
                           _loadTilesForCurrentViewport();
                         } else {
@@ -473,6 +481,7 @@ class _MyAppState extends State<MyApp> {
                           viewportOffset: widget.viewportOffset,
                           zoomLevel: widget.currentZoomLevel,
                           onLoadTileRequest: (_) {},
+                          labels: widget.labels,
                         ),
                       ),
                     ),
@@ -505,13 +514,14 @@ class _MyAppState extends State<MyApp> {
                             "${widget.currentZoomLevel}x",
                             style: TextStyle(color: Colors.white),
                           ),
-                          widget.isLoading
-                              ? SizedBox(
-                                  height: 10,
-                                  width: 10,
-                                  child: CircularProgressIndicator(),
-                                )
-                              : SizedBox.square(dimension: 0),
+                          Switch(
+                            value: widget.isLebelInput,
+                            onChanged: (v) {
+                              setState(() {
+                                widget.isLebelInput = v;
+                              });
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -521,128 +531,4 @@ class _MyAppState extends State<MyApp> {
             ),
     );
   }
-}
-
-class Painter extends CustomPainter {
-  final Size screenSize;
-  final Size viewPortSize;
-  late final Size imgResolution;
-  final double scale;
-  final Offset viewportOffset;
-  final Offset initialPos;
-  final int zoomLevel;
-  final List<List<ui.Image?>>? images;
-  final void Function(Point point) onLoadTileRequest;
-
-  Painter({
-    required this.screenSize,
-    required this.scale,
-    required this.initialPos,
-    required this.viewPortSize,
-    required this.images,
-    required this.viewportOffset,
-    required this.zoomLevel,
-    required this.onLoadTileRequest,
-  }) {
-    imgResolution = Size(
-      resolutionTable[zoomLevel]?.width ?? 0,
-      resolutionTable[zoomLevel]?.height ?? 0,
-    );
-  }
-
-  @override
-  void paint(ui.Canvas canvas, ui.Size size) {
-    _drawViewPort(canvas);
-    _drawTiles(canvas);
-  }
-
-  _drawTiles(Canvas canvas) {
-    if (images != null && images!.isNotEmpty) {
-      final bounds = calculateTileBounds(
-        scale: scale,
-        initialPos: initialPos,
-        viewportOffset: viewportOffset,
-        zoomLevel: zoomLevel,
-        viewPortSize: viewPortSize,
-      );
-      final startX = bounds.startX;
-      final startY = bounds.startY;
-      final endX = bounds.endX;
-      final endY = bounds.endY;
-
-      for (int y = startY; y < images!.length - endY; y++) {
-        for (int x = startX; x < images![y].length - endX; x++) {
-          final tile = images![y][x];
-          if (tile != null) {
-            final left = (x.toDouble() * tileSize * scale).floorToDouble();
-            final top = (y.toDouble() * tileSize * scale).floorToDouble();
-            final width = (tile.width.toDouble() * scale).ceilToDouble();
-            final height = (tile.height.toDouble() * scale).ceilToDouble();
-            _drawImage(canvas, tile, Offset(left, top), Size(width, height));
-          } else {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                x * tileSize * scale + initialPos.dx,
-                y * tileSize * scale + initialPos.dy,
-                tileSize * scale,
-                tileSize * scale,
-              ),
-              Paint()..color = Colors.grey,
-            );
-          }
-        }
-      }
-    } else {
-      _debugPoint(canvas, Offset(20, 10), Colors.greenAccent);
-    }
-  }
-
-  void _drawImage(Canvas canvas, ui.Image image, Offset offset, Size size) {
-    final src = Rect.fromLTWH(
-      0,
-      0,
-      image.width.toDouble(),
-      image.height.toDouble(),
-    );
-    final dst = Rect.fromLTWH(
-      offset.dx + initialPos.dx,
-      offset.dy + initialPos.dy,
-      size.width,
-      size.height,
-    );
-    canvas.drawImageRect(
-      image,
-      src,
-      dst,
-      Paint()..filterQuality = FilterQuality.high,
-    );
-  }
-
-  _drawViewPort(Canvas canvas) {
-    Rect viewportRect = Rect.fromLTWH(
-      viewportOffset.dx,
-      viewportOffset.dy,
-      viewPortSize.width,
-      viewPortSize.height,
-    );
-    canvas.drawRect(
-      viewportRect,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..color = Colors.white,
-    );
-  }
-
-  _debugPoint(Canvas canvas, Offset c, Color color) {
-    canvas.drawCircle(
-      c,
-      3,
-      Paint()
-        ..style = PaintingStyle.fill
-        ..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
