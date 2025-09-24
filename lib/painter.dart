@@ -1,0 +1,154 @@
+import 'dart:math';
+import 'dart:ui' as ui;
+import 'package:embiggen_your_eyes/lebel.dart';
+import 'package:embiggen_your_eyes/main.dart';
+import 'package:flutter/material.dart';
+
+class Painter extends CustomPainter {
+  final Size screenSize;
+  final Size viewPortSize;
+  late final Size imgResolution;
+  final double scale;
+  final Offset viewportOffset;
+  final Offset initialPos;
+  final int zoomLevel;
+  final List<List<ui.Image?>>? images;
+  final void Function(Point point) onLoadTileRequest;
+  final List<Lebel?> labels;
+  Painter({
+    required this.screenSize,
+    required this.scale,
+    required this.initialPos,
+    required this.viewPortSize,
+    required this.images,
+    required this.viewportOffset,
+    required this.zoomLevel,
+    required this.onLoadTileRequest,
+    required this.labels,
+  }) {
+    imgResolution = Size(
+      resolutionTable[zoomLevel]?.width ?? 0,
+      resolutionTable[zoomLevel]?.height ?? 0,
+    );
+  }
+
+  @override
+  void paint(ui.Canvas canvas, ui.Size size) {
+    _drawViewPort(canvas);
+    _drawTiles(canvas);
+  }
+
+  _drawTiles(Canvas canvas) {
+    if (images != null && images!.isNotEmpty) {
+      final bounds = calculateTileBounds(
+        scale: scale,
+        initialPos: initialPos,
+        viewportOffset: viewportOffset,
+        zoomLevel: zoomLevel,
+        viewPortSize: viewPortSize,
+      );
+      final startX = bounds.startX;
+      final startY = bounds.startY;
+      final endX = bounds.endX;
+      final endY = bounds.endY;
+
+      for (int y = startY; y < images!.length - endY; y++) {
+        for (int x = startX; x < images![y].length - endX; x++) {
+          final tile = images![y][x];
+          if (tile != null) {
+            final double left = (x.toDouble() * tileSize * scale)
+                .floorToDouble();
+            final double top = (y.toDouble() * tileSize * scale)
+                .floorToDouble();
+            final double width = (tile.width.toDouble() * scale).ceilToDouble();
+            final double height = (tile.height.toDouble() * scale)
+                .ceilToDouble();
+            final tileRect = Rect.fromLTWH(left, top, width, height);
+            final Rect adjustedRect = tileRect.inflate(0.5);
+            _drawImage(canvas, tile, adjustedRect.topLeft, adjustedRect.size);
+          } else {
+            _drawPlaceholder(
+              Offset(
+                x * tileSize * scale + initialPos.dx,
+                y * tileSize * scale + initialPos.dy,
+              ),
+              Size(tileSize * scale, tileSize * scale),
+              "Fcat afaj ejaj ka",
+              canvas,
+            );
+          }
+        }
+      }
+    } else {
+      _debugPoint(canvas, Offset(20, 10), Colors.greenAccent);
+    }
+  }
+
+  void _drawPlaceholder(Offset offset, Size size, String text, Canvas canvas) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: Colors.black, fontSize: 25),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    Rect rect = Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
+    canvas.drawRect(rect, Paint()..color = Colors.blue);
+    final Offset textOffset = Offset(
+      offset.dx + (size.width - textPainter.width) / 2,
+      offset.dy + (size.height - textPainter.height) / 2,
+    );
+
+    textPainter.paint(canvas, textOffset);
+  }
+
+  void _drawImage(Canvas canvas, ui.Image image, Offset offset, Size size) {
+    final src = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
+    final dst = Rect.fromLTWH(
+      offset.dx + initialPos.dx,
+      offset.dy + initialPos.dy,
+      size.width,
+      size.height,
+    );
+    canvas.drawImageRect(
+      image,
+      src,
+      dst,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+  }
+
+  _drawViewPort(Canvas canvas) {
+    Rect viewportRect = Rect.fromLTWH(
+      viewportOffset.dx,
+      viewportOffset.dy,
+      viewPortSize.width,
+      viewPortSize.height,
+    );
+    canvas.drawRect(
+      viewportRect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.white,
+    );
+  }
+
+  _debugPoint(Canvas canvas, Offset c, Color color) {
+    canvas.drawCircle(
+      c,
+      7,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
