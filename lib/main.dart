@@ -362,9 +362,11 @@ class _MyAppState extends State<MyApp> {
                           );
 
                           widget.labels.add(lebel);
+                          widget.currentLabelIndex = widget.labels.length - 1;
                         });
                       }
                     },
+
                     onPointerMove: (event) {
                       setState(() {
                         widget.initialPos += event.delta;

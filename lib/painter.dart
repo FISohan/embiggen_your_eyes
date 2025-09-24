@@ -1,7 +1,5 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-
-import 'package:embiggen_your_eyes/convert.dart';
 import 'package:embiggen_your_eyes/lebel.dart';
 import 'package:embiggen_your_eyes/main.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +38,6 @@ class Painter extends CustomPainter {
     _drawTiles(canvas);
   }
 
-
   _drawTiles(Canvas canvas) {
     if (images != null && images!.isNotEmpty) {
       final bounds = calculateTileBounds(
@@ -59,20 +56,25 @@ class Painter extends CustomPainter {
         for (int x = startX; x < images![y].length - endX; x++) {
           final tile = images![y][x];
           if (tile != null) {
-            final left = (x.toDouble() * tileSize * scale).floorToDouble();
-            final top = (y.toDouble() * tileSize * scale).floorToDouble();
-            final width = (tile.width.toDouble() * scale).ceilToDouble();
-            final height = (tile.height.toDouble() * scale).ceilToDouble();
-            _drawImage(canvas, tile, Offset(left, top), Size(width, height));
+            final double left = (x.toDouble() * tileSize * scale)
+                .floorToDouble();
+            final double top = (y.toDouble() * tileSize * scale)
+                .floorToDouble();
+            final double width = (tile.width.toDouble() * scale).ceilToDouble();
+            final double height = (tile.height.toDouble() * scale)
+                .ceilToDouble();
+            final tileRect = Rect.fromLTWH(left, top, width, height);
+            final Rect adjustedRect = tileRect.inflate(0.5);
+            _drawImage(canvas, tile, adjustedRect.topLeft, adjustedRect.size);
           } else {
-            canvas.drawRect(
-              Rect.fromLTWH(
+            _drawPlaceholder(
+              Offset(
                 x * tileSize * scale + initialPos.dx,
                 y * tileSize * scale + initialPos.dy,
-                tileSize * scale,
-                tileSize * scale,
               ),
-              Paint()..color = Colors.blue.withAlpha(50),
+              Size(tileSize * scale, tileSize * scale),
+              "Fcat afaj ejaj ka",
+              canvas,
             );
           }
         }
@@ -80,6 +82,25 @@ class Painter extends CustomPainter {
     } else {
       _debugPoint(canvas, Offset(20, 10), Colors.greenAccent);
     }
+  }
+
+  void _drawPlaceholder(Offset offset, Size size, String text, Canvas canvas) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: Colors.black, fontSize: 25),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    Rect rect = Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
+    canvas.drawRect(rect, Paint()..color = Colors.blue);
+    final Offset textOffset = Offset(
+      offset.dx + (size.width - textPainter.width) / 2,
+      offset.dy + (size.height - textPainter.height) / 2,
+    );
+
+    textPainter.paint(canvas, textOffset);
   }
 
   void _drawImage(Canvas canvas, ui.Image image, Offset offset, Size size) {
@@ -101,75 +122,6 @@ class Painter extends CustomPainter {
       dst,
       Paint()..filterQuality = FilterQuality.high,
     );
-  }
-
-  void _drawPlaceholderTile(Canvas canvas, int x, int y, int currentZoomLevel) {
-    if (currentZoomLevel > 1) {
-      // Calculate the coordinates of the parent tile at the previous zoom level
-      int parentX = x ~/ 2;
-      int parentY = y ~/ 2;
-      int parentZoomLevel = currentZoomLevel - 1;
-
-      final parentImages = resolutionTable.keys.contains(parentZoomLevel)
-          ? images![parentZoomLevel]
-          : null;
-      if (parentImages == null || parentY >= parentImages.length) {
-        // The parent image list or tile doesn't exist, draw a green rect as a last resort
-        canvas.drawRect(
-          Rect.fromLTWH(
-            x * tileSize * scale + initialPos.dx,
-            y * tileSize * scale + initialPos.dy,
-            tileSize * scale,
-            tileSize * scale,
-          ),
-          Paint()..color = Colors.green,
-        );
-        return;
-      }
-      final parentTile = parentImages[parentY];
-
-      if (parentTile != null) {
-        // Calculate which quadrant of the parent tile the current tile corresponds to
-        final int quadrantX = x % 2;
-        final int quadrantY = y % 2;
-
-        final double srcTileSize = tileSize;
-        final double srcLeft = quadrantX * srcTileSize;
-        final double srcTop = quadrantY * srcTileSize;
-
-        // The source rectangle is a quarter of the parent image
-        final src = Rect.fromLTWH(srcLeft, srcTop, srcTileSize, srcTileSize);
-
-        // The destination rectangle is the same as the current tile's destination
-        final dst = Rect.fromLTWH(
-          x * tileSize * scale + initialPos.dx,
-          y * tileSize * scale + initialPos.dy,
-          tileSize * scale,
-          tileSize * scale,
-        );
-
-        canvas.drawImageRect(
-          parentTile,
-          src,
-          dst,
-          Paint()..filterQuality = FilterQuality.low,
-        );
-      } else {
-        // Recursively call to find the grandparent tile
-        _drawPlaceholderTile(canvas, parentX, parentY, parentZoomLevel);
-      }
-    } else {
-      // If zoom level is 1 and the tile is missing, draw a green rect
-      canvas.drawRect(
-        Rect.fromLTWH(
-          x * tileSize * scale + initialPos.dx,
-          y * tileSize * scale + initialPos.dy,
-          tileSize * scale,
-          tileSize * scale,
-        ),
-        Paint()..color = Colors.green,
-      );
-    }
   }
 
   _drawViewPort(Canvas canvas) {
