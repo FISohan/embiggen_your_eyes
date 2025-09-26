@@ -41,8 +41,6 @@ class _ViewerState extends State<Viewer> {
 
   bool isLoading = false;
   bool isLebelInput = false;
-  Rect? lebelRect = null;
-  Point<double>? labelPos = null;
   List<Lebel> labels = [];
   bool showCustomLabelUi = false;
   int currentLabelIndex = -1;
@@ -71,13 +69,13 @@ class _ViewerState extends State<Viewer> {
     double scaleY =
         viewPortSize.height / resolutionTable[currentZoomLevel]!.height;
     scale = min(scaleX, scaleY);
+    currentResolution = _getCurrentResolution();
     viewportOffset = Offset(
-      (screenSize.width / 2) - (viewPortSize.width / 2),
-      (screenSize.height / 2) - (viewPortSize.height / 2),
+      (screenSize.width / 2) - (currentResolution.width / 2),
+      (screenSize.height / 2) - (currentResolution.height / 2),
     );
 
     initialPos = viewportOffset;
-    currentResolution = _getCurrentResolution();
   }
 
   void _initImages() {
@@ -350,9 +348,10 @@ class _ViewerState extends State<Viewer> {
                 _buildCanvas(),
                 _buildZoomControllPanel(),
                 _buildZoomLebelAndSearchPanel(),
+                if (isShowingLabel) ..._buildLabelOverlays(),
+
                 if (showCustomLabelUi && currentLabelIndex != -1)
                   _featuresCard(),
-                if (isShowingLabel) ..._buildLabelOverlays(),
               ],
             ),
     );
@@ -385,7 +384,7 @@ class _ViewerState extends State<Viewer> {
                   pos: screenToImageSpace(
                     imageCurrentRes: _getCurrentResolution(),
                     imageOffset: initialPos,
-                    pointerLocation: event.localPosition,
+                    pointerLocation: event.globalPosition,
                     scale: scale,
                   ),
                   originalSize: _getCurrentResolution(),
@@ -523,26 +522,17 @@ class _ViewerState extends State<Viewer> {
           left: finalPosition.dx - 10.0,
           top: finalPosition.dy - 10.0,
           child: IconButton(
+            tooltip: label.title,
             icon: Icon(Icons.my_location_sharp, color: Colors.lightGreenAccent),
             onPressed: () {
               setState(() {
                 currentLabelIndex = i;
                 showCustomLabelUi = true;
               });
-              print(i);
             },
           ),
         ),
       );
-
-      // // Add bounding box
-      // overlays.add(
-      //   createOutlinedRect(
-      //     center: finalPosition,
-      //     width: label.boundingBox.width * scaleX,
-      //     height: label.boundingBox.height * scaleY,
-      //   ),
-      // );
     }
     return overlays;
   }
@@ -555,13 +545,27 @@ class _ViewerState extends State<Viewer> {
 
         child: BlurryCard(
           editable: labels[currentLabelIndex].title == null,
-          onClosePressed: () {
+          onFloatingClosePressed: () {
             setState(() {
               showCustomLabelUi = false;
             });
           },
+          onClosePressed: () {
+            setState(() {
+              showCustomLabelUi = false;
+              if (labels[labels.length - 1].title == null) {
+                labels.removeAt(labels.length - 1);
+              }
+            });
+          },
+          onDeletePressed: () {
+            setState(() {
+              labels.removeAt(currentLabelIndex);
+              print(currentLabelIndex);
+              currentLabelIndex = -1;
+            });
+          },
           boxValueChange: (width, height) {
-            print(width * height);
             Lebel current = labels[currentLabelIndex];
             setState(() {
               labels[currentLabelIndex] = Lebel(
