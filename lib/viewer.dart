@@ -400,7 +400,7 @@ class _ViewerState extends State<Viewer> {
             double dampenedScaleChange =
                 1.0 + (details.scale - 1.0) * dampingFactor;
 
-            _handleZoom(dampingFactor, details.focalPoint);
+            // _handleZoom(dampingFactor, details.focalPoint);
           },
           child: CustomPaint(
             painter: Painter(
