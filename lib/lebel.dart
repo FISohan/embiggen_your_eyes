@@ -7,13 +7,13 @@ class Lebel {
   final Size originalSize;
   final String? title;
   final String? description;
-  final Size? boundingBox;
+  final Size boundingBox;
 
   Lebel({
     required this.pos,
     required this.originalSize,
     this.title,
     this.description,
-    this.boundingBox,
+    required this.boundingBox,
   });
 }

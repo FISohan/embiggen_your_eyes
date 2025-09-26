@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:embiggen_your_eyes/lebel.dart';
-import 'package:embiggen_your_eyes/main.dart';
+import 'package:stellar_zoom/convert.dart';
+import 'package:stellar_zoom/dataset_metadata.dart';
+import 'package:stellar_zoom/lebel.dart';
 import 'package:flutter/material.dart';
+import 'package:stellar_zoom/viewer.dart' hide tileSize;
 
 class Painter extends CustomPainter {
   final Size screenSize;
@@ -15,6 +17,7 @@ class Painter extends CustomPainter {
   final List<List<ui.Image?>>? images;
   final void Function(Point point) onLoadTileRequest;
   final List<Lebel?> labels;
+  final Map<int, Size> resolutionTable;
   Painter({
     required this.screenSize,
     required this.scale,
@@ -25,6 +28,7 @@ class Painter extends CustomPainter {
     required this.zoomLevel,
     required this.onLoadTileRequest,
     required this.labels,
+    required this.resolutionTable
   }) {
     imgResolution = Size(
       resolutionTable[zoomLevel]?.width ?? 0,
@@ -45,7 +49,7 @@ class Painter extends CustomPainter {
         initialPos: initialPos,
         viewportOffset: viewportOffset,
         zoomLevel: zoomLevel,
-        viewPortSize: viewPortSize,
+        viewPortSize: viewPortSize, tileSize: tileSize, resolutionTable: resolutionTable,
       );
       final startX = bounds.startX;
       final startY = bounds.startY;
