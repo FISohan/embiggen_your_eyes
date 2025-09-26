@@ -257,13 +257,13 @@ class HomePage extends StatelessWidget {
   Widget _buildImageGallery(BuildContext context) {
     final List<Map<String, dynamic>> images = [
       {
-        "title": "Messiar 13",
+        "title": "Andromeda Galaxy",
         "id": messiar13,
         "resTable": resolutionTableMessiar13,
         "description":
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuCiMmhz_GbXkuMMLwqsNvJqx4KSn5ig_Tk8tyyFfPmIc4sPVv9P9KuFWSxDiEXj6VEUdChrDAlhlotGRcrPZ03gp1c1188ZKZhIjiuajLqjEN5McCWtwmHIgNBaskFc-BoPShIU0DoUuhKb-ix-xkW3O67jNXofXerAiJU8ZjE2-YjSh4iI4km54lJ2EXsAOm2NnJiiMPNaTOBMaAzwMa7y3WWKlIhjJFp7qWE5gcrPJNjlNpZJM9lWbMpMQkXKvkRsLzEpyOtTS4hA",
+            "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
       },
       {
         "title": "Messiar 51",
@@ -272,7 +272,42 @@ class HomePage extends StatelessWidget {
         "description":
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuCiMmhz_GbXkuMMLwqsNvJqx4KSn5ig_Tk8tyyFfPmIc4sPVv9P9KuFWSxDiEXj6VEUdChrDAlhlotGRcrPZ03gp1c1188ZKZhIjiuajLqjEN5McCWtwmHIgNBaskFc-BoPShIU0DoUuhKb-ix-xkW3O67jNXofXerAiJU8ZjE2-YjSh4iI4km54lJ2EXsAOm2NnJiiMPNaTOBMaAzwMa7y3WWKlIhjJFp7qWE5gcrPJNjlNpZJM9lWbMpMQkXKvkRsLzEpyOtTS4hA",
+            "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
+      },
+      {
+        "title": "Sombrero Galaxy",
+        "id": sombreroGalaxy,
+        "resTable": resolutionTableSombreroGalaxy,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/wallpaper1/opo0328a.jpg",
+      },
+      {
+        "title": "Sun",
+        "id": sun,
+        "resTable": resolutionTableSun,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "http://sohan.sgp1.cdn.digitaloceanspaces.com/PIA26681_modest.jpg",
+      },
+      {
+        "title": "Milky Way",
+        "id": milkWay,
+        "resTable": resolutionTableMilkWay,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl": "https://cdn.eso.org/images/wallpaper1/eso1242a.jpg",
+      },
+      {
+        "title": "Carina Nebula Jets",
+        "id": carina,
+        "resTable": resolutionTableCarina,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg",
       },
     ];
 
