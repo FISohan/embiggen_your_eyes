@@ -17,7 +17,9 @@ class Painter extends CustomPainter {
   final List<List<ui.Image?>>? images;
   final void Function(Point point) onLoadTileRequest;
   final List<Lebel?> labels;
+  final Size currentRes;
   final Map<int, Size> resolutionTable;
+  final bool isShowLabel;
   Painter({
     required this.screenSize,
     required this.scale,
@@ -28,7 +30,9 @@ class Painter extends CustomPainter {
     required this.zoomLevel,
     required this.onLoadTileRequest,
     required this.labels,
-    required this.resolutionTable
+    required this.resolutionTable,
+    required this.currentRes,
+    required this.isShowLabel,
   }) {
     imgResolution = Size(
       resolutionTable[zoomLevel]?.width ?? 0,
@@ -38,8 +42,41 @@ class Painter extends CustomPainter {
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
-    _drawViewPort(canvas);
     _drawTiles(canvas);
+    if (isShowLabel) {
+      _drawLabelBounndingBox(canvas);
+    }
+  }
+
+  _drawLabelBounndingBox(Canvas canvas) {
+    for (int i = 0; i < labels.length; i++) {
+      final label = labels[i];
+      final currentImageRes = currentRes;
+
+      // Calculate screen position once
+      final screenPosition = imageToScreenSpace(
+        normalizedPos: label!.pos,
+        currentImageRes: currentImageRes,
+      );
+      final finalPosition = screenPosition + initialPos + Offset(10.0, 10.0);
+
+      // Calculate scaled bounding box size once
+      final scaleX = currentImageRes.width / label.originalSize.width;
+      final scaleY = currentImageRes.height / label.originalSize.height;
+
+      Rect rect = Rect.fromCenter(
+        center: finalPosition,
+        width: label.boundingBox.width * scaleX,
+        height: label.boundingBox.height * scaleY,
+      );
+
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..color = Colors.lightGreenAccent,
+      );
+    }
   }
 
   _drawTiles(Canvas canvas) {
@@ -49,7 +86,9 @@ class Painter extends CustomPainter {
         initialPos: initialPos,
         viewportOffset: viewportOffset,
         zoomLevel: zoomLevel,
-        viewPortSize: viewPortSize, tileSize: tileSize, resolutionTable: resolutionTable,
+        viewPortSize: viewPortSize,
+        tileSize: tileSize,
+        resolutionTable: resolutionTable,
       );
       final startX = bounds.startX;
       final startY = bounds.startY;

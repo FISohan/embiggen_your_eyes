@@ -46,7 +46,7 @@ class _ViewerState extends State<Viewer> {
   List<Lebel> labels = [];
   bool showCustomLabelUi = false;
   int currentLabelIndex = -1;
-
+  bool isShowingLabel = true;
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
   @override
@@ -349,9 +349,10 @@ class _ViewerState extends State<Viewer> {
               children: [
                 _buildCanvas(),
                 _buildZoomControllPanel(),
+                _buildZoomLebelAndSearchPanel(),
                 if (showCustomLabelUi && currentLabelIndex != -1)
                   _featuresCard(),
-                ..._buildLabelOverlays(),
+                if (isShowingLabel) ..._buildLabelOverlays(),
               ],
             ),
     );
@@ -359,116 +360,149 @@ class _ViewerState extends State<Viewer> {
 
   SizedBox _buildCanvas() {
     return SizedBox(
-                width: viewPortSize.width,
-                height: viewPortSize.height,
-                child: Listener(
-                  onPointerMove: (event) {
-                    setState(() {
-                      initialPos += event.delta;
-                      _startDebounceTimer();
-                    });
-                  },
-                  onPointerSignal: (PointerSignalEvent event) async {
-                    if (event is PointerScrollEvent) {
-                      final scaleChange = event.scrollDelta.dy < 0
-                          ? scaleFactor
-                          : 1 / scaleFactor;
-                      _handleZoom(scaleChange, event.localPosition);
-                    }
-                  },
-                  child: GestureDetector(
-                    onLongPressStart: (event) {
-                      if (isLebelInput) {
-                        setState(() {
-                          Lebel lebel = Lebel(
-                            pos: screenToImageSpace(
-                              imageCurrentRes: _getCurrentResolution(),
-                              imageOffset: initialPos,
-                              pointerLocation: event.localPosition,
-                              scale: scale,
-                            ),
-                            originalSize: _getCurrentResolution(),
-                            boundingBox: Size(0, 0),
-                          );
-                          showCustomLabelUi = true;
-
-                          labels.add(lebel);
-                          currentLabelIndex = labels.length - 1;
-                        });
-                      }
-                    },
-                    onScaleUpdate: (ScaleUpdateDetails details) {
-                      _handleZoom(details.scale, details.focalPoint);
-                    },
-                    child: CustomPaint(
-                      painter: Painter(
-                        screenSize: screenSize,
-                        scale: scale,
-                        initialPos: initialPos,
-                        viewPortSize: viewPortSize,
-                        images: image![currentZoomLevel],
-                        viewportOffset: viewportOffset,
-                        zoomLevel: currentZoomLevel,
-                        onLoadTileRequest: (_) {},
-                        labels: labels,
-                        resolutionTable: resolutionTable,
-                      ),
-                    ),
+      width: viewPortSize.width,
+      height: viewPortSize.height,
+      child: Listener(
+        onPointerMove: (event) {
+          setState(() {
+            initialPos += event.delta;
+            _startDebounceTimer();
+          });
+        },
+        onPointerSignal: (PointerSignalEvent event) async {
+          if (event is PointerScrollEvent) {
+            final scaleChange = event.scrollDelta.dy < 0
+                ? scaleFactor
+                : 1 / scaleFactor;
+            _handleZoom(scaleChange, event.localPosition);
+          }
+        },
+        child: GestureDetector(
+          onLongPressStart: (event) {
+            if (isLebelInput) {
+              setState(() {
+                Lebel lebel = Lebel(
+                  pos: screenToImageSpace(
+                    imageCurrentRes: _getCurrentResolution(),
+                    imageOffset: initialPos,
+                    pointerLocation: event.localPosition,
+                    scale: scale,
                   ),
-                ),
-              );
+                  originalSize: _getCurrentResolution(),
+                  boundingBox: Size(0, 0),
+                );
+                showCustomLabelUi = true;
+
+                labels.add(lebel);
+                currentLabelIndex = labels.length - 1;
+              });
+            }
+          },
+          onScaleUpdate: (ScaleUpdateDetails details) {
+            _handleZoom(details.scale, details.focalPoint);
+          },
+          child: CustomPaint(
+            painter: Painter(
+              screenSize: screenSize,
+              scale: scale,
+              initialPos: initialPos,
+              viewPortSize: viewPortSize,
+              images: image![currentZoomLevel],
+              viewportOffset: viewportOffset,
+              zoomLevel: currentZoomLevel,
+              onLoadTileRequest: (_) {},
+              labels: labels,
+              resolutionTable: resolutionTable,
+              currentRes: _getCurrentResolution(),
+              isShowLabel: isShowingLabel,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Padding _buildZoomControllPanel() {
     return Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Align(
-                  alignment: Alignment.bottomRight,
+      padding: const EdgeInsets.all(18.0),
+      child: Align(
+        alignment: Alignment.bottomRight,
 
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Wrap(
-                      direction: Axis.horizontal,
-                      alignment: WrapAlignment.spaceBetween,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Wrap(
+            direction: Axis.horizontal,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            children: [
+              IconButton(
+                onPressed: _zoomIn,
+                icon: Icon(Icons.zoom_in_sharp, color: Colors.white),
+              ),
+              IconButton(
+                onPressed: _zoomOut,
+                icon: Icon(Icons.zoom_out_sharp, color: Colors.white),
+              ),
+              Text(
+                "${currentZoomLevel}x / ${_getMaxZoomLevel()}x",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      children: [
-                        IconButton(
-                          onPressed: _zoomIn,
-                          icon: Icon(
-                            Icons.zoom_in_sharp,
-                            color: Colors.white,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _zoomOut,
-                          icon: Icon(
-                            Icons.zoom_out_sharp,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          "${currentZoomLevel}x",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        Switch(
-                          value: isLebelInput,
+  Padding _buildZoomLebelAndSearchPanel() {
+    return // This is the main refactored widget snippet:
+    Padding(
+      padding: const EdgeInsets.all(18.0),
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          // Added padding around the controls for better visual spacing
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          // Used Row with mainAxisSize.min to wrap children tightly
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. "Add Label" Switch (Assumes 'isAddingLabel' is the state variable)
+              _buildSwitchControl(
+                label: 'Add Label',
+                value: isLebelInput,
+                onChanged: (v) {
+                  setState(() {
+                    isLebelInput = v;
+                  });
+                },
+              ),
 
-                          onChanged: (v) {
-                            setState(() {
-                              isLebelInput = v;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
+              const SizedBox(width: 10), // Separator
+              // 2. "Show Label" Switch (New, assumes 'isShowingLabel' is the state variable)
+              _buildSwitchControl(
+                label: 'Show Label',
+                value: isShowingLabel,
+                onChanged: (v) {
+                  setState(() {
+                    isShowingLabel = v;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   List<Widget> _buildLabelOverlays() {
@@ -483,20 +517,6 @@ class _ViewerState extends State<Viewer> {
         currentImageRes: currentImageRes,
       );
       final finalPosition = screenPosition + initialPos;
-
-      // Calculate scaled bounding box size once
-      final scaleX = currentImageRes.width / label.originalSize.width;
-      final scaleY = currentImageRes.height / label.originalSize.height;
-
-      // Add bounding box
-      overlays.add(
-        createOutlinedRect(
-          center: finalPosition,
-          width: label.boundingBox.width * scaleX,
-          height: label.boundingBox.height * scaleY,
-        ),
-      );
-
       // Add icon button
       overlays.add(
         Positioned(
@@ -507,11 +527,22 @@ class _ViewerState extends State<Viewer> {
             onPressed: () {
               setState(() {
                 currentLabelIndex = i;
+                showCustomLabelUi = true;
               });
+              print(i);
             },
           ),
         ),
       );
+
+      // // Add bounding box
+      // overlays.add(
+      //   createOutlinedRect(
+      //     center: finalPosition,
+      //     width: label.boundingBox.width * scaleX,
+      //     height: label.boundingBox.height * scaleY,
+      //   ),
+      // );
     }
     return overlays;
   }
@@ -561,4 +592,25 @@ class _ViewerState extends State<Viewer> {
       ),
     );
   }
+}
+
+Widget _buildSwitchControl({
+  required String label,
+  required bool value,
+  required ValueChanged<bool> onChanged,
+}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      Transform.scale(
+        scale: 0.6,
+        child: Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          activeColor: Colors.blueAccent,
+        ),
+      ),
+    ],
+  );
 }
