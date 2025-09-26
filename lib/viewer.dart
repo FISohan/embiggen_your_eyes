@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 import 'package:stellar_zoom/card.dart';
 import 'package:stellar_zoom/convert.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
-import 'package:stellar_zoom/indicator_bounding_box.dart';
 import 'package:stellar_zoom/lebel.dart';
 import 'package:stellar_zoom/load_image.dart';
 import 'package:stellar_zoom/painter.dart';
@@ -70,12 +69,11 @@ class _ViewerState extends State<Viewer> {
         viewPortSize.height / resolutionTable[currentZoomLevel]!.height;
     scale = min(scaleX, scaleY);
     currentResolution = _getCurrentResolution();
-    viewportOffset = Offset(
+    initialPos = Offset(
       (screenSize.width / 2) - (currentResolution.width / 2),
       (screenSize.height / 2) - (currentResolution.height / 2),
     );
-
-    initialPos = viewportOffset;
+    ;
   }
 
   void _initImages() {
