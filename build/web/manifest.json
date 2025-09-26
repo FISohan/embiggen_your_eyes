@@ -1,11 +1,11 @@
 {
-    "name": "embiggen_your_eyes",
-    "short_name": "embiggen_your_eyes",
+    "name": "Stellar Zoom",
+    "short_name": "Stellar Zoom",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "A deep zoom image viewer for space images.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
