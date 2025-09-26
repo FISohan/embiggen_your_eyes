@@ -396,7 +396,7 @@ class _ViewerState extends State<Viewer> {
             }
           },
           onScaleUpdate: (ScaleUpdateDetails details) {
-            const double dampingFactor = 0.5;
+            const double dampingFactor = 0.2;
             double dampenedScaleChange =
                 1.0 + (details.scale - 1.0) * dampingFactor;
 
