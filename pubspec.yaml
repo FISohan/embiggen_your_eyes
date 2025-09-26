@@ -1,5 +1,5 @@
-name: embiggen_your_eyes
-description: "A new Flutter project."
+name: stellar_zoom
+description: "A deep zoom image viewer for space images."
 publish_to: 'none'
 version: 0.1.0
 
@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.5.0
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:
