@@ -81686,7 +81686,7 @@ s.push(new A.qQ(new A.hh(p.a/q.a,p.b/q.b,t.np),o,null,null,new A.v(0,0)))
 r.dy=s.length-1},
 $S:0}
 A.alC.prototype={
-$1(a){this.a.LV(1+(a.d-1)*0.2,a.b)},
+$1(a){this.a.LV(0.02,a.b)},
 $S:525}
 A.alJ.prototype={
 $1(a){var s=this.a

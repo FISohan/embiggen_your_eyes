@@ -396,11 +396,11 @@ class _ViewerState extends State<Viewer> {
             }
           },
           onScaleUpdate: (ScaleUpdateDetails details) {
-            const double dampingFactor = 0.2;
+            const double dampingFactor = 0.02;
             double dampenedScaleChange =
                 1.0 + (details.scale - 1.0) * dampingFactor;
 
-            _handleZoom(dampenedScaleChange, details.focalPoint);
+            _handleZoom(dampingFactor, details.focalPoint);
           },
           child: CustomPaint(
             painter: Painter(
