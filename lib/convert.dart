@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Point<double> screenToImageSpace({
   required Offset imageOffset,
@@ -68,3 +69,9 @@ Offset imageToScreenSpace({
 
   return (startX: startX, startY: startY, endX: endX, endY: endY);
 }
+
+  Future<void> launchURL(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }

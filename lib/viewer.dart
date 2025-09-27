@@ -14,7 +14,15 @@ import 'package:hive/hive.dart';
 class Viewer extends StatefulWidget {
   final Map<int, Size> resolutionTable;
   final String id;
-  const Viewer({super.key, required this.resolutionTable, required this.id});
+  final String creditLink;
+  final String creditTitle;
+  const Viewer({
+    super.key,
+    required this.resolutionTable,
+    required this.id,
+    required this.creditLink,
+    required this.creditTitle,
+  });
   @override
   State<Viewer> createState() => _ViewerState();
 }
@@ -46,10 +54,10 @@ class _ViewerState extends State<Viewer> {
   bool showCustomLabelUi = false;
   int currentLabelIndex = -1;
   bool isShowingLabel = true;
-  Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
+  Map<int, List<List<ui.Image?>>>? image = {}; 
 
   // Cache management
-  static const int maxCacheSizeInBytes = 256 * 1024 * 1024; // 500 MB
+  static const int maxCacheSizeInBytes = 256 * 1024 * 1024; // 256 MB
 
   int _calculateCacheSize() {
     int size = 0;
@@ -456,6 +464,7 @@ class _ViewerState extends State<Viewer> {
 
                 if (showCustomLabelUi && currentLabelIndex != -1)
                   _featuresCard(),
+                _buildCreditLink(),
               ],
             ),
     );
@@ -537,7 +546,8 @@ class _ViewerState extends State<Viewer> {
         alignment: Alignment.bottomRight,
 
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          padding: EdgeInsets.only(right: 8),
+          height: 40,
           decoration: BoxDecoration(
             color: Colors.black87,
             borderRadius: BorderRadius.circular(5),
@@ -546,7 +556,6 @@ class _ViewerState extends State<Viewer> {
             direction: Axis.horizontal,
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 10,
             children: [
               IconButton(
                 onPressed: _zoomIn,
@@ -574,6 +583,7 @@ class _ViewerState extends State<Viewer> {
       child: Align(
         alignment: Alignment.topRight,
         child: Container(
+          height: 40,
           // Added padding around the controls for better visual spacing
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
@@ -712,6 +722,26 @@ class _ViewerState extends State<Viewer> {
               },
           title: labels[currentLabelIndex].title ?? "",
           description: labels[currentLabelIndex].description ?? "",
+        ),
+      ),
+    );
+  }
+
+  Align _buildCreditLink() {
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: InkWell(
+          onTap: () => launchURL(widget.creditLink),
+          child: Text(
+            'Credit: ${widget.creditTitle}',
+            style: TextStyle(
+              fontSize: 12.0,
+              color: Colors.blue[300],
+              decoration: TextDecoration.underline,
+            ),
+          ),
         ),
       ),
     );

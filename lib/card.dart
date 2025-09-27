@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:stellar_zoom/tts_service.dart';
 
 // 1. Define the enum for the categories based on the image
 enum LabelCategory {
@@ -108,6 +109,8 @@ class _BlurryCardState extends State<BlurryCard> {
   final _descriptionController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
+  final TtsService _ttsService = TtsService();
+  bool _isSpeaking = false;
   
   // 3. State variable for the selected category
   LabelCategory? _selectedCategory;
@@ -125,10 +128,19 @@ class _BlurryCardState extends State<BlurryCard> {
       _heightController.text = '0';
       _selectedCategory = LabelCategory.stars; // Default selection
     }
+
+    _ttsService.isSpeaking.addListener(() {
+      if (mounted) {
+        setState(() {
+          _isSpeaking = _ttsService.isSpeaking.value;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _ttsService.stop();
     _titleController.dispose();
     _descriptionController.dispose();
     _widthController.dispose();
@@ -483,7 +495,22 @@ class _BlurryCardState extends State<BlurryCard> {
           child: Align(
             alignment: Alignment.topRight,
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  onPressed: () {
+                    if (_isSpeaking) {
+                      _ttsService.stop();
+                    } else {
+                      _ttsService.speak(widget.description);
+                    }
+                  },
+                  icon: Icon(
+                    _isSpeaking ? Icons.stop : Icons.play_arrow,
+                    color: Colors.white,
+                  ),
+                  tooltip: _isSpeaking ? 'Stop' : 'Listen to description',
+                ),
                 IconButton(
                   onPressed: widget.onClosePressed,
                   icon: const Icon(Icons.close, color: Colors.white),

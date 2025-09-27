@@ -8,4 +8,3 @@ void main() async {
   Hive.registerAdapter(LebelAdapter());
   runApp(MaterialApp(home: HomePage()));
 }
-

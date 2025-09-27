@@ -4,7 +4,6 @@ import 'package:stellar_zoom/convert.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
 import 'package:stellar_zoom/lebel.dart';
 import 'package:flutter/material.dart';
-import 'package:stellar_zoom/viewer.dart' hide tileSize;
 
 class Painter extends CustomPainter {
   final Size screenSize;

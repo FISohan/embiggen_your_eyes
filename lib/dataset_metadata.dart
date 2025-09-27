@@ -6,6 +6,7 @@ const String sombreroGalaxy = "galaxy12";
 const String sun = "sun";
 const String milkWay = "galaxy222";
 const String carina = "carina";
+const String tapestryOfBlazingStarbirth = "galaxy364";
 
 final Map<int, Size> resolutionTableMessiar13 = {
   1: Size(1080, 253),
@@ -56,3 +57,11 @@ final Map<int, Size> resolutionTableCarina = {
 };
 
 const double tileSize = 256.0;
+
+final Map<int, Size> resolutionTableTapestryOfBlazingStarbirth = {
+  1: Size(1080, 742),
+  2: Size(2160, 1484),
+  3: Size(4320, 2968),
+  4: Size(8640, 5936),
+  5: Size(17043, 11710),
+};

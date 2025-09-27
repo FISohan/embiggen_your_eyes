@@ -37,6 +37,8 @@ class _ImageCardState extends State<ImageCard> {
                 builder: (context) => Viewer(
                   resolutionTable: widget.image['resTable'],
                   id: widget.image['id'],
+                  creditLink: widget.image['creditLink'],
+                  creditTitle: widget.image['creditTitle'],
                 ),
               ),
             );
@@ -288,7 +290,7 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
-        "creditTitle": "NASA, ESA, B. Williams (University of Washington)"
+        "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
       },
       {
         "title": "The Whirlpool Galaxy",
@@ -299,7 +301,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
         "creditLink": "https://esahubble.org/images/heic0506a/",
-        "creditTitle": "ESA/Hubble"
+        "creditTitle": "ESA/Hubble",
       },
       {
         "title": "Sombrero Galaxy",
@@ -310,7 +312,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/wallpaper1/opo0328a.jpg",
         "creditLink": "https://esahubble.org/images/opo0328a/",
-        "creditTitle": "ESA/Hubble"
+        "creditTitle": "ESA/Hubble",
       },
       {
         "title": "Sun",
@@ -321,7 +323,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "http://sohan.sgp1.cdn.digitaloceanspaces.com/PIA26681_modest.jpg",
         "creditLink": "https://photojournal.jpl.nasa.gov/catalog/PIA26681",
-        "creditTitle": "NASA/JPL-Caltech"
+        "creditTitle": "NASA/JPL-Caltech",
       },
       {
         "title": "The Central Parts of the Milky Way",
@@ -331,7 +333,7 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl": "https://cdn.eso.org/images/wallpaper1/eso1242a.jpg",
         "creditLink": "https://www.eso.org/public/images/eso1242a/",
-        "creditTitle": "ESO"
+        "creditTitle": "ESO",
       },
       {
         "title": "Carina Nebula Jets",
@@ -342,7 +344,18 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg",
         "creditLink": "https://esawebb.org/images/carinanebula3/",
-        "creditTitle": "ESA/Webb"
+        "creditTitle": "ESA/Webb",
+      },
+      {
+        "title": "Tapestry of Blazing Starbirth",
+        "id": tapestryOfBlazingStarbirth,
+        "resTable": resolutionTableTapestryOfBlazingStarbirth,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/screen/heic2007a.jpg",
+        "creditLink": "https://esawebb.org/images/carinanebula3/",
+        "creditTitle": "ESA/Webb",
       },
     ];
 
