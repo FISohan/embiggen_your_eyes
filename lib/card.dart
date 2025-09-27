@@ -1,6 +1,63 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+// 1. Define the enum for the categories based on the image
+enum LabelCategory {
+  stars,
+  galaxies,
+  nebula,
+  exotic,
+  exoplanet,
+}
+
+// Extension to provide display details for the enum
+extension LabelCategoryDetails on LabelCategory {
+  String get name {
+    switch (this) {
+      case LabelCategory.stars:
+        return 'STARS';
+      case LabelCategory.galaxies:
+        return 'GALAXIES';
+      case LabelCategory.nebula:
+        return 'NEBULA';
+      case LabelCategory.exotic:
+        return 'EXOTIC';
+      case LabelCategory.exoplanet:
+        return 'EXOPLANET';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case LabelCategory.stars:
+        return Icons.star; // Closest material icon for star
+      case LabelCategory.galaxies:
+        return Icons.radar; // Stylized concentric circles
+      case LabelCategory.nebula:
+        return Icons.cloud; // Cloud/nebulous shape
+      case LabelCategory.exotic:
+        return Icons.all_inclusive; // Swirl/infinity-like
+      case LabelCategory.exoplanet:
+        return Icons.circle; // Simple planet/dot
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case LabelCategory.stars:
+        return Colors.deepPurple;
+      case LabelCategory.galaxies:
+        return Colors.orange;
+      case LabelCategory.nebula:
+        return Colors.pink;
+      case LabelCategory.exotic:
+        return Colors.yellow;
+      case LabelCategory.exoplanet:
+        return Colors.teal;
+    }
+  }
+}
+
 // The BlurryCard widget is now a StatefulWidget to manage the state of the input fields.
 class BlurryCard extends StatefulWidget {
   final String title;
@@ -9,11 +66,13 @@ class BlurryCard extends StatefulWidget {
   final VoidCallback? onFloatingClosePressed; // NEW: For the top-right 'X' button
   final VoidCallback? onDeletePressed;
   final bool editable;
+  // 2. Updated onAddLabel to include LabelCategory
   final void Function(
     String title,
     String description,
     double width,
     double height,
+    LabelCategory category, // NEW: Category input
   )? onAddLabel;
 
   final void Function(double width, double height)? boxValueChange;
@@ -23,7 +82,7 @@ class BlurryCard extends StatefulWidget {
     this.title = 'Title',
     this.description = 'Description',
     this.onClosePressed,
-    this.onFloatingClosePressed, // Added new callback
+    this.onFloatingClosePressed,
     this.onDeletePressed,
     this.editable = false,
     this.onAddLabel,
@@ -41,6 +100,9 @@ class _BlurryCardState extends State<BlurryCard> {
   final _descriptionController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
+  
+  // 3. State variable for the selected category
+  LabelCategory? _selectedCategory;
 
   @override
   void initState() {
@@ -50,9 +112,10 @@ class _BlurryCardState extends State<BlurryCard> {
       _titleController.text = widget.title;
       _descriptionController.text = widget.description;
     } else {
-      // Set default values to 0 when in editable mode.
+      // Set default values and default category when in editable mode.
       _widthController.text = '0';
       _heightController.text = '0';
+      _selectedCategory = LabelCategory.stars; // Default selection
     }
   }
 
@@ -69,7 +132,7 @@ class _BlurryCardState extends State<BlurryCard> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 300,
-      height: widget.editable ? 400 : 400,
+      height: widget.editable ? 450 : 400, // Increased height for the new input
       child: Stack(
         children: [
           // The blurry, transparent background layer
@@ -97,24 +160,84 @@ class _BlurryCardState extends State<BlurryCard> {
     );
   }
 
+  // New widget for the category dropdown
+  Widget _buildCategoryDropdown() {
+    return DropdownButtonFormField<LabelCategory>(
+      value: _selectedCategory,
+      hint: Text(
+        'Select Category',
+        style: TextStyle(color: Colors.white.withOpacity(0.7)),
+      ),
+      validator: (value) {
+        if (value == null) {
+          return 'Please select a category';
+        }
+        return null;
+      },
+      onChanged: (LabelCategory? newValue) {
+        setState(() {
+          _selectedCategory = newValue;
+        });
+      },
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+        // Match the error style of other TextFormFields
+        errorStyle: const TextStyle(color: Colors.redAccent),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        ),
+      ),
+      dropdownColor: Colors.grey.shade900.withOpacity(0.9), // Dark background for dropdown
+      style: const TextStyle(color: Colors.white),
+      items: LabelCategory.values.map((category) {
+        return DropdownMenuItem<LabelCategory>(
+          value: category,
+          child: Row(
+            children: [
+              Icon(category.icon, color: category.color),
+              const SizedBox(width: 8),
+              Text(
+                category.name,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildEditableForm(
     final void Function(double width, double height)? boxValueChange,
   ) {
-    return Stack( // Replaced Padding with Stack to position the floating close button
+    return Stack(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
             20.0,
-            48.0, // Increased top padding to avoid overlap with the new floating close button
+            48.0,
             20.0,
             20.0,
           ),
           child: SingleChildScrollView(
             child: Form(
-              key: _formKey, // Attach the GlobalKey to the Form
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Category Dropdown
+                  _buildCategoryDropdown(),
+                  const SizedBox(height: 12),
                   // Title input
                   _buildTextFormField(
                     _titleController,
@@ -220,7 +343,8 @@ class _BlurryCardState extends State<BlurryCard> {
                           onPressed: () {
                             // Validate all form fields
                             if (_formKey.currentState?.validate() ?? false) {
-                              if (widget.onAddLabel != null) {
+                              // 4. Update onAddLabel logic to pass the category
+                              if (widget.onAddLabel != null && _selectedCategory != null) {
                                 final double? width = double.tryParse(
                                   _widthController.text,
                                 );
@@ -234,6 +358,7 @@ class _BlurryCardState extends State<BlurryCard> {
                                     _descriptionController.text,
                                     width,
                                     height,
+                                    _selectedCategory!, // Pass the selected category
                                   );
                                 }
                               }
@@ -256,12 +381,12 @@ class _BlurryCardState extends State<BlurryCard> {
             ),
           ),
         ),
-        // NEW: Floating Close button for editable form (uses onFloatingClosePressed)
+        // Floating Close button for editable form
         Positioned(
           top: 8.0,
           right: 8.0,
           child: IconButton(
-            onPressed: widget.onFloatingClosePressed, // Uses the new callback
+            onPressed: widget.onFloatingClosePressed,
             icon: const Icon(Icons.close, color: Colors.white),
             tooltip: 'Close Card',
           ),

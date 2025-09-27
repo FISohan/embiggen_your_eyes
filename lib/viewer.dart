@@ -525,7 +525,10 @@ class _ViewerState extends State<Viewer> {
           top: finalPosition.dy - 10.0,
           child: IconButton(
             tooltip: label.title,
-            icon: Icon(Icons.my_location_sharp, color: Colors.lightGreenAccent),
+            icon: Icon(
+              label.category?.icon ?? Icons.location_on_sharp,
+              color: label.category?.color ?? Colors.lightGreenAccent,
+            ),
             onPressed: () {
               setState(() {
                 currentLabelIndex = i;
@@ -579,19 +582,21 @@ class _ViewerState extends State<Viewer> {
               );
             });
           },
-          onAddLabel: (title, description, width, height) {
-            Lebel current = labels[currentLabelIndex];
-            setState(() {
-              labels[currentLabelIndex] = Lebel(
-                pos: current.pos,
-                originalSize: current.originalSize,
-                title: title,
-                boundingBox: Size(width, height),
-                description: description,
-              );
-              currentLabelIndex = -1;
-            });
-          },
+          onAddLabel:
+              (title, description, width, height, LabelCategory category) {
+                Lebel current = labels[currentLabelIndex];
+                setState(() {
+                  labels[currentLabelIndex] = Lebel(
+                    pos: current.pos,
+                    originalSize: current.originalSize,
+                    title: title,
+                    boundingBox: Size(width, height),
+                    description: description,
+                    category: category,
+                  );
+                  currentLabelIndex = -1;
+                });
+              },
           title: labels[currentLabelIndex].title ?? "",
           description: labels[currentLabelIndex].description ?? "",
         ),

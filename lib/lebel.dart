@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:stellar_zoom/card.dart';
 
 class Lebel {
   final Point<double> pos;
@@ -8,6 +9,7 @@ class Lebel {
   final String? title;
   final String? description;
   final Size boundingBox;
+  final LabelCategory? category;
 
   Lebel({
     required this.pos,
@@ -15,5 +17,6 @@ class Lebel {
     this.title,
     this.description,
     required this.boundingBox,
+    this.category
   });
 }
