@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
-import 'package:stellar_zoom/main.dart';
 import 'package:stellar_zoom/viewer.dart';
 
 class ImageCard extends StatefulWidget {

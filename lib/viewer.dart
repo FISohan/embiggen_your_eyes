@@ -9,6 +9,7 @@ import 'package:stellar_zoom/painter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:hive/hive.dart';
 
 class Viewer extends StatefulWidget {
   final Map<int, Size> resolutionTable;
@@ -21,6 +22,7 @@ class Viewer extends StatefulWidget {
 class _ViewerState extends State<Viewer> {
   Timer? _debounceTimer;
   late Map<int, Size> resolutionTable;
+  late Box<Lebel> _labelBox;
 
   double scale = 1;
   Offset delta = Offset(0.0, 0.0);
@@ -54,8 +56,21 @@ class _ViewerState extends State<Viewer> {
 
     int maxX = (resolutionTable[currentZoomLevel]!.width / tileSize).ceil();
     int maxY = (resolutionTable[currentZoomLevel]!.height / tileSize).ceil();
-
+    _openLabelBox();
     _loadInitialTiles(maxX, maxY);
+  }
+
+  void _openLabelBox() async {
+    _labelBox = await Hive.openBox<Lebel>(widget.id);
+    setState(() {
+      labels = _labelBox.values.toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _labelBox.close();
+    super.dispose();
   }
 
   @override
@@ -392,6 +407,7 @@ class _ViewerState extends State<Viewer> {
 
                 labels.add(lebel);
                 currentLabelIndex = labels.length - 1;
+                _labelBox.add(lebel);
               });
             }
           },
@@ -558,14 +574,16 @@ class _ViewerState extends State<Viewer> {
           onClosePressed: () {
             setState(() {
               showCustomLabelUi = false;
-              if (labels[labels.length - 1].title == null) {
-                labels.removeAt(labels.length - 1);
+              if (labels.isNotEmpty && labels.last.title == null) {
+                labels.removeLast();
+                _labelBox.deleteAt(_labelBox.length - 1);
               }
             });
           },
           onDeletePressed: () {
             setState(() {
               labels.removeAt(currentLabelIndex);
+              _labelBox.deleteAt(currentLabelIndex);
               print(currentLabelIndex);
               currentLabelIndex = -1;
             });
@@ -573,30 +591,34 @@ class _ViewerState extends State<Viewer> {
           boxValueChange: (width, height) {
             Lebel current = labels[currentLabelIndex];
             setState(() {
-              labels[currentLabelIndex] = Lebel(
+              final updatedLebel = Lebel(
                 pos: current.pos,
                 originalSize: current.originalSize,
                 title: current.title,
                 boundingBox: Size(width, height),
                 description: current.description,
               );
+              labels[currentLabelIndex] = updatedLebel;
+              _labelBox.putAt(currentLabelIndex, updatedLebel);
             });
           },
           onAddLabel:
               (title, description, width, height, LabelCategory category) {
-                Lebel current = labels[currentLabelIndex];
-                setState(() {
-                  labels[currentLabelIndex] = Lebel(
-                    pos: current.pos,
-                    originalSize: current.originalSize,
-                    title: title,
-                    boundingBox: Size(width, height),
-                    description: description,
-                    category: category,
-                  );
-                  currentLabelIndex = -1;
-                });
-              },
+            Lebel current = labels[currentLabelIndex];
+            setState(() {
+              final updatedLebel = Lebel(
+                pos: current.pos,
+                originalSize: current.originalSize,
+                title: title,
+                boundingBox: Size(width, height),
+                description: description,
+                category: category,
+              );
+              labels[currentLabelIndex] = updatedLebel;
+              _labelBox.putAt(currentLabelIndex, updatedLebel);
+              currentLabelIndex = -1;
+            });
+          },
           title: labels[currentLabelIndex].title ?? "",
           description: labels[currentLabelIndex].description ?? "",
         ),

@@ -56,6 +56,14 @@ extension LabelCategoryDetails on LabelCategory {
         return Colors.teal;
     }
   }
+
+  static LabelCategory fromJson(Map<String, dynamic> json) {
+    return LabelCategory.values.firstWhere((e) => e.name == json['name']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'name': name};
+  }
 }
 
 // The BlurryCard widget is now a StatefulWidget to manage the state of the input fields.
