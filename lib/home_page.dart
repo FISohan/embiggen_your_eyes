@@ -291,6 +291,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
         "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
+        "creditLink": "https://esahubble.org/images/heic0506a/",
       },
       {
         "title": "The Whirlpool Galaxy",

@@ -27,14 +27,14 @@ class Viewer extends StatefulWidget {
   State<Viewer> createState() => _ViewerState();
 }
 
-class _ViewerState extends State<Viewer> {
+class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   Timer? _debounceTimer;
   late Map<int, Size> resolutionTable;
   late Box<Lebel> _labelBox;
 
   double scale = 1;
   Offset delta = Offset(0.0, 0.0);
-  double scaleFactor = 1.03;
+  double scaleFactor = 1.05;
 
   Size viewPortSize = Size(600, 400);
   Offset initialPos = Offset(0.0, 0.0);
@@ -54,10 +54,16 @@ class _ViewerState extends State<Viewer> {
   bool showCustomLabelUi = false;
   int currentLabelIndex = -1;
   bool isShowingLabel = true;
-  Map<int, List<List<ui.Image?>>>? image = {}; 
+  Map<int, List<List<ui.Image?>>>? image = {};
 
   // Cache management
   static const int maxCacheSizeInBytes = 256 * 1024 * 1024; // 256 MB
+
+  late AnimationController _animationController;
+  Animation<double>? _scaleAnimation;
+  Animation<Offset>? _positionAnimation;
+  late AnimationController _panAnimationController;
+  Animation<Offset>? _panAnimation;
 
   int _calculateCacheSize() {
     int size = 0;
@@ -76,10 +82,7 @@ class _ViewerState extends State<Viewer> {
 
   void _manageCache() {
     int currentSize = _calculateCacheSize();
-    print("Current cache size: ${currentSize / 1024 / 1024} MB");
     if (currentSize < maxCacheSizeInBytes) return;
-
-    print("Cache size exceeds the limit. Cleaning up...");
 
     final bound = calculateTileBounds(
       scale: scale,
@@ -99,7 +102,6 @@ class _ViewerState extends State<Viewer> {
     }
 
     int bytesToFree = currentSize - maxCacheSizeInBytes;
-    print("Bytes to free: ${bytesToFree / 1024 / 1024} MB");
     List<MapEntry<int, Point<int>>> allTiles = [];
 
     image?.forEach((zoomLevel, zoomLevelImages) {
@@ -136,9 +138,6 @@ class _ViewerState extends State<Viewer> {
         final freedBytes = img.height * img.width * 4;
         bytesToFree -= freedBytes;
         image![entry.key]![entry.value.y][entry.value.x] = null;
-        print(
-          "Removed tile at zoom ${entry.key}, x: ${entry.value.x}, y: ${entry.value.y}. Freed ${freedBytes / 1024 / 1024} MB",
-        );
       }
     }
     setState(() {});
@@ -154,6 +153,69 @@ class _ViewerState extends State<Viewer> {
     int maxY = (resolutionTable[currentZoomLevel]!.height / tileSize).ceil();
     _openLabelBox();
     _loadInitialTiles(maxX, maxY);
+    _initAnimation();
+  }
+
+  void _initAnimation() {
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 250))
+          ..addListener(() {
+            if (_scaleAnimation != null && _positionAnimation != null) {
+              setState(() {
+                // set animated value
+                initialPos = _positionAnimation!.value;
+                scale = _scaleAnimation!.value;
+              });
+
+              if (_scaleAnimation!.isCompleted ||
+                  _positionAnimation!.isCompleted) {
+                // after completed load tiles
+                _startDebounceTimer();
+              }
+            }
+          });
+
+    _panAnimationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 250))
+          ..addListener(() {
+            if (_panAnimation != null) {
+              setState(() {
+                initialPos = _panAnimation!.value;
+              });
+
+              if (_panAnimation!.status == AnimationStatus.completed ||
+                  _panAnimation!.status == AnimationStatus.dismissed) {
+                _startDebounceTimer();
+              }
+            }
+          });
+  }
+
+  void _startAnimatedTrasition({
+    required double targatedScale,
+    required Offset targatedPos,
+    Duration duration = const Duration(milliseconds: 250),
+  }) {
+    // stop running animation
+    _animationController.stop();
+
+    _scaleAnimation = Tween<double>(begin: scale, end: targatedScale).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+
+    _positionAnimation = Tween<Offset>(begin: initialPos, end: targatedPos)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOutCubic,
+          ),
+        );
+    _animationController.duration = duration;
+    _animationController.reset();
+    _animationController.forward();
   }
 
   void _openLabelBox() async {
@@ -260,14 +322,6 @@ class _ViewerState extends State<Viewer> {
       tileSize: tileSize,
       resolutionTable: resolutionTable,
     );
-
-    // final newVisibleTiles = <Point<int>>{};
-    // for (int y = bound.startY; y < bound.endY; y++) {
-    //   for (int x = bound.startX; x < bound.endX; x++) {
-    //     newVisibleTiles.add(Point(x, y));
-    //   }
-    // }
-
     final currentVisibleTiles = <Point<int>>{};
     for (
       int y = bound.startY;
@@ -343,61 +397,94 @@ class _ViewerState extends State<Viewer> {
   }
 
   void _zoomIn() {
-    if (currentZoomLevel < _getMaxZoomLevel()) {
+    if (currentZoomLevel >= _getMaxZoomLevel() && scale >= 2.0) return;
+
+    final oldScale = scale;
+    final oldZoomLevel = currentZoomLevel;
+    final focal = Offset(
+      viewportOffset.dx + viewPortSize.width / 2.0,
+      viewportOffset.dy + viewPortSize.height / 2.0,
+    );
+
+    // Update zoom level and scale
+    int nextZoomLevel = oldZoomLevel;
+    double nextScale = scale * 1.8;
+
+    if (nextScale >= 2.0) {
+      nextZoomLevel++;
+      nextScale /= 2.0;
+    }
+    if (nextZoomLevel > _getMaxZoomLevel()) {
+      nextZoomLevel = _getMaxZoomLevel();
+      nextScale = min(nextScale, 2.0);
+    }
+    // Correct focal point calculation for discrete zoom levels
+    final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
+    final nextTotalScale = nextScale * resolutionTable[nextZoomLevel]!.width;
+    final imagePoint = (focal - initialPos) / oldTotalScale;
+    final newInitialPos = focal - (imagePoint * nextTotalScale);
+    setState(() {
+      currentZoomLevel = nextZoomLevel;
+    });
+    _loadTilesForCurrentViewport();
+
+    if (currentZoomLevel == nextZoomLevel) {
+      _startAnimatedTrasition(
+        targatedScale: nextScale,
+        targatedPos: newInitialPos,
+      );
+    } else {
       setState(() {
-        final oldScale = scale;
-        final oldZoomLevel = currentZoomLevel;
-        final focal = Offset(
-          viewportOffset.dx + viewPortSize.width / 2.0,
-          viewportOffset.dy + viewPortSize.height / 2.0,
-        );
-
-        // Update zoom level and scale
-        final nextZoomLevel = oldZoomLevel + 1;
-        final nextScale = 1.0;
-
-        // Correct focal point calculation for discrete zoom levels
-        final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
-        final nextTotalScale =
-            nextScale * resolutionTable[nextZoomLevel]!.width;
-        final imagePoint = (focal - initialPos) / oldTotalScale;
-        final newInitialPos = focal - imagePoint * nextTotalScale;
-
         initialPos = newInitialPos;
         scale = nextScale;
-        currentZoomLevel = nextZoomLevel;
-
-        _loadTilesForCurrentViewport();
       });
     }
   }
 
   void _zoomOut() {
-    if (currentZoomLevel > 1) {
+    if (currentZoomLevel <= 1 && scale <= 1.0) return;
+
+    final oldScale = scale;
+    final oldZoomLevel = currentZoomLevel;
+    final focal = Offset(
+      viewportOffset.dx + viewPortSize.width / 2,
+      viewportOffset.dy + viewPortSize.height / 2,
+    );
+
+    // Update zoom level and scale
+    int nextZoomLevel = oldZoomLevel;
+    double nextScale = oldScale / 1.5;
+    if (nextScale <= 1.0) {
+      nextScale *= 2.0;
+      nextZoomLevel--;
+    }
+
+    if (nextZoomLevel < 1) {
+      nextZoomLevel = 1;
+      nextScale = max(nextScale, 0.4);
+    }
+
+    // Correct focal point calculation for discrete zoom levels
+    final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
+    final nextTotalScale = nextScale * resolutionTable[nextZoomLevel]!.width;
+    final imagePoint = (focal - initialPos) / oldTotalScale;
+    final newInitialPos = focal - imagePoint * nextTotalScale;
+
+    setState(() {
+      currentZoomLevel = nextZoomLevel;
+    });
+
+    _loadTilesForCurrentViewport();
+
+    if (currentZoomLevel == nextZoomLevel) {
+      _startAnimatedTrasition(
+        targatedScale: nextScale,
+        targatedPos: newInitialPos,
+      );
+    } else {
       setState(() {
-        final oldScale = scale;
-        final oldZoomLevel = currentZoomLevel;
-        final focal = Offset(
-          viewportOffset.dx + viewPortSize.width / 2,
-          viewportOffset.dy + viewPortSize.height / 2,
-        );
-
-        // Update zoom level and scale
-        final nextZoomLevel = oldZoomLevel - 1;
-        final nextScale = 1.0;
-
-        // Correct focal point calculation for discrete zoom levels
-        final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
-        final nextTotalScale =
-            nextScale * resolutionTable[nextZoomLevel]!.width;
-        final imagePoint = (focal - initialPos) / oldTotalScale;
-        final newInitialPos = focal - imagePoint * nextTotalScale;
-
         initialPos = newInitialPos;
         scale = nextScale;
-        currentZoomLevel = nextZoomLevel;
-
-        _loadTilesForCurrentViewport();
       });
     }
   }
@@ -418,6 +505,11 @@ class _ViewerState extends State<Viewer> {
       nextZoomLevel--;
       nextScale *= 2.0;
     }
+    if (nextZoomLevel == _getMaxZoomLevel()) {
+      nextScale = min(nextScale, 2.0);
+    } else if (nextZoomLevel == 1) {
+      nextScale = max(nextScale, 0.3);
+    }
 
     Offset newInitialPos;
     // The math for calculating the new position based on the focal point
@@ -429,23 +521,42 @@ class _ViewerState extends State<Viewer> {
           nextScale * widget.resolutionTable[nextZoomLevel]!.width;
       final imagePoint = (focalPoint - initialPos) / oldTotalWidth;
       newInitialPos = focalPoint - (imagePoint * nextTotalWidth);
+      currentZoomLevel = nextZoomLevel;
+      _loadTilesForCurrentViewport();
     } else {
-      // When changing scale within the same zoom level
       final scaleRatio = nextScale / oldScale;
       newInitialPos = focalPoint - (focalPoint - initialPos) * scaleRatio;
+      _startDebounceTimer();
     }
 
     setState(() {
       initialPos = newInitialPos;
       scale = nextScale;
-      currentZoomLevel = nextZoomLevel;
     });
+  }
 
-    // Load new tiles if we changed levels, otherwise debounce for panning/small zooms
-    if (oldZoomLevel != currentZoomLevel) {
-      _loadTilesForCurrentViewport();
-    } else {
+  void _onPanMove(DragUpdateDetails event) {
+    //  print(event.delta.dx / event.timeStamp.inMilliseconds);
+    setState(() {
+      initialPos += event.delta;
       _startDebounceTimer();
+    });
+  }
+
+  void _onPanEnd(DragEndDetails event) {
+    final Offset val = event.velocity.pixelsPerSecond;
+    const double flingDampingFactor = 0.1;
+    print(val.distanceSquared);
+    if (val.distanceSquared > 100.0) {
+      final Offset targatedOffset = initialPos + (val * flingDampingFactor);
+      _panAnimation = _panAnimationController.drive(
+        Tween<Offset>(
+          begin: initialPos,
+          end: targatedOffset,
+        ).chain(CurveTween(curve: Curves.decelerate)),
+      );
+      _panAnimationController.value = 0;
+      _panAnimationController.forward();
     }
   }
 
@@ -475,12 +586,6 @@ class _ViewerState extends State<Viewer> {
       width: viewPortSize.width,
       height: viewPortSize.height,
       child: Listener(
-        onPointerMove: (event) {
-          setState(() {
-            initialPos += event.delta;
-            _startDebounceTimer();
-          });
-        },
         onPointerSignal: (PointerSignalEvent event) async {
           if (event is PointerScrollEvent) {
             final scaleChange = event.scrollDelta.dy < 0
@@ -490,6 +595,12 @@ class _ViewerState extends State<Viewer> {
           }
         },
         child: GestureDetector(
+          onPanStart: (event) {
+            _panAnimationController.stop();
+            _animationController.stop();
+          },
+          onPanEnd: _onPanEnd,
+          onPanUpdate: _onPanMove,
           onLongPressStart: (event) {
             if (isLebelInput) {
               setState(() {
@@ -504,19 +615,11 @@ class _ViewerState extends State<Viewer> {
                   boundingBox: Size(0, 0),
                 );
                 showCustomLabelUi = true;
-
                 labels.add(lebel);
                 currentLabelIndex = labels.length - 1;
                 _labelBox.add(lebel);
               });
             }
-          },
-          onScaleUpdate: (ScaleUpdateDetails details) {
-            const double dampingFactor = 0.02;
-            double dampenedScaleChange =
-                1.0 + (details.scale - 1.0) * dampingFactor;
-
-            // _handleZoom(dampingFactor, details.focalPoint);
           },
           child: CustomPaint(
             painter: Painter(
