@@ -49,7 +49,7 @@ class _ViewerState extends State<Viewer> {
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
   // Cache management
-  static const int maxCacheSizeInBytes = 50 * 1024 * 1024; // 500 MB
+  static const int maxCacheSizeInBytes = 256 * 1024 * 1024; // 500 MB
 
   int _calculateCacheSize() {
     int size = 0;

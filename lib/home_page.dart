@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
 import 'package:stellar_zoom/viewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ImageCard extends StatefulWidget {
   final Map<String, dynamic> image;
@@ -14,6 +15,12 @@ class ImageCard extends StatefulWidget {
 
 class _ImageCardState extends State<ImageCard> {
   bool _isHovered = false;
+
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,36 +51,7 @@ class _ImageCardState extends State<ImageCard> {
                     const Center(child: CircularProgressIndicator()),
                 errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
-              // Bottom title, visible when not hovered
-              AnimatedOpacity(
-                opacity: _isHovered ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      widget.image['title']!,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Overlay for hover effect
+              // Hover overlay with description
               AnimatedOpacity(
                 opacity: _isHovered ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
@@ -104,6 +82,53 @@ class _ImageCardState extends State<ImageCard> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+              // Always visible bottom section with title and credit
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.8),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AnimatedOpacity(
+                        opacity: _isHovered ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          widget.image['title']!,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4.0),
+                      InkWell(
+                        onTap: () => _launchUrl(widget.image['creditLink']!),
+                        child: Text(
+                          'Credit: ${widget.image['creditTitle']}',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.blue[300],
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -263,15 +288,18 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
+        "creditTitle": "NASA, ESA, B. Williams (University of Washington)"
       },
       {
-        "title": "Messiar 51",
+        "title": "The Whirlpool Galaxy",
         "id": messiar51,
         "resTable": resolutionTableM51,
         "description":
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
+        "creditLink": "https://esahubble.org/images/heic0506a/",
+        "creditTitle": "ESA/Hubble"
       },
       {
         "title": "Sombrero Galaxy",
@@ -281,6 +309,8 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/wallpaper1/opo0328a.jpg",
+        "creditLink": "https://esahubble.org/images/opo0328a/",
+        "creditTitle": "ESA/Hubble"
       },
       {
         "title": "Sun",
@@ -290,14 +320,18 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "http://sohan.sgp1.cdn.digitaloceanspaces.com/PIA26681_modest.jpg",
+        "creditLink": "https://photojournal.jpl.nasa.gov/catalog/PIA26681",
+        "creditTitle": "NASA/JPL-Caltech"
       },
       {
-        "title": "Milky Way",
+        "title": "The Central Parts of the Milky Way",
         "id": milkWay,
         "resTable": resolutionTableMilkWay,
         "description":
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl": "https://cdn.eso.org/images/wallpaper1/eso1242a.jpg",
+        "creditLink": "https://www.eso.org/public/images/eso1242a/",
+        "creditTitle": "ESO"
       },
       {
         "title": "Carina Nebula Jets",
@@ -307,6 +341,8 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg",
+        "creditLink": "https://esawebb.org/images/carinanebula3/",
+        "creditTitle": "ESA/Webb"
       },
     ];
 
