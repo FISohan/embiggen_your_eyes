@@ -48,6 +48,94 @@ class _ViewerState extends State<Viewer> {
   bool isShowingLabel = true;
   Map<int, List<List<ui.Image?>>>? image = {}; // zoom_level > [img_x][img_y]
 
+  // Cache management
+  static const int maxCacheSizeInBytes = 50 * 1024 * 1024; // 500 MB
+
+  int _calculateCacheSize() {
+    int size = 0;
+    image?.forEach((_, zoomLevelImages) {
+      for (var row in zoomLevelImages) {
+        for (var img in row) {
+          if (img != null) {
+            size +=
+                img.height * img.width * 4; // Approximate size in bytes (RGBA)
+          }
+        }
+      }
+    });
+    return size;
+  }
+
+  void _manageCache() {
+    int currentSize = _calculateCacheSize();
+    print("Current cache size: ${currentSize / 1024 / 1024} MB");
+    if (currentSize < maxCacheSizeInBytes) return;
+
+    print("Cache size exceeds the limit. Cleaning up...");
+
+    final bound = calculateTileBounds(
+      scale: scale,
+      initialPos: initialPos,
+      viewportOffset: viewportOffset,
+      zoomLevel: currentZoomLevel,
+      viewPortSize: viewPortSize,
+      tileSize: tileSize,
+      resolutionTable: resolutionTable,
+    );
+
+    final visibleTiles = <Point<int>>{};
+    for (int y = bound.startY; y < bound.endY; y++) {
+      for (int x = bound.startX; x < bound.endX; x++) {
+        visibleTiles.add(Point(x, y));
+      }
+    }
+
+    int bytesToFree = currentSize - maxCacheSizeInBytes;
+    print("Bytes to free: ${bytesToFree / 1024 / 1024} MB");
+    List<MapEntry<int, Point<int>>> allTiles = [];
+
+    image?.forEach((zoomLevel, zoomLevelImages) {
+      for (int y = 0; y < zoomLevelImages.length; y++) {
+        for (int x = 0; x < zoomLevelImages[y].length; x++) {
+          if (zoomLevelImages[y][x] != null) {
+            allTiles.add(MapEntry(zoomLevel, Point(x, y)));
+          }
+        }
+      }
+    });
+
+    allTiles.sort((a, b) {
+      int zoomDiffA = (a.key - currentZoomLevel).abs();
+      int zoomDiffB = (b.key - currentZoomLevel).abs();
+      if (zoomDiffA != zoomDiffB) {
+        return zoomDiffB.compareTo(
+          zoomDiffA,
+        ); // Sort by zoom level difference descending
+      } else {
+        return a.key.compareTo(b.key); // Then by zoom level ascending
+      }
+    });
+
+    for (var entry in allTiles) {
+      if (bytesToFree <= 0) break;
+
+      if (entry.key == currentZoomLevel && visibleTiles.contains(entry.value)) {
+        continue; // Don't remove visible tiles
+      }
+
+      final img = image![entry.key]![entry.value.y][entry.value.x];
+      if (img != null) {
+        final freedBytes = img.height * img.width * 4;
+        bytesToFree -= freedBytes;
+        image![entry.key]![entry.value.y][entry.value.x] = null;
+        print(
+          "Removed tile at zoom ${entry.key}, x: ${entry.value.x}, y: ${entry.value.y}. Freed ${freedBytes / 1024 / 1024} MB",
+        );
+      }
+    }
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +210,7 @@ class _ViewerState extends State<Viewer> {
               setState(() {
                 image![zoomLevel]![y][x] = value;
               });
+              _manageCache();
             }
           });
         }
@@ -197,6 +286,7 @@ class _ViewerState extends State<Viewer> {
             setState(() {
               image![currentZoomLevel]![tile.y][tile.x] = value;
             });
+            _manageCache();
           }
         });
       }
@@ -223,6 +313,7 @@ class _ViewerState extends State<Viewer> {
               setState(() {
                 image![nextZoomLevel]![tile.y][tile.x] = value;
               });
+              _manageCache();
             }
           });
         }
@@ -604,21 +695,21 @@ class _ViewerState extends State<Viewer> {
           },
           onAddLabel:
               (title, description, width, height, LabelCategory category) {
-            Lebel current = labels[currentLabelIndex];
-            setState(() {
-              final updatedLebel = Lebel(
-                pos: current.pos,
-                originalSize: current.originalSize,
-                title: title,
-                boundingBox: Size(width, height),
-                description: description,
-                category: category,
-              );
-              labels[currentLabelIndex] = updatedLebel;
-              _labelBox.putAt(currentLabelIndex, updatedLebel);
-              currentLabelIndex = -1;
-            });
-          },
+                Lebel current = labels[currentLabelIndex];
+                setState(() {
+                  final updatedLebel = Lebel(
+                    pos: current.pos,
+                    originalSize: current.originalSize,
+                    title: title,
+                    boundingBox: Size(width, height),
+                    description: description,
+                    category: category,
+                  );
+                  labels[currentLabelIndex] = updatedLebel;
+                  _labelBox.putAt(currentLabelIndex, updatedLebel);
+                  currentLabelIndex = -1;
+                });
+              },
           title: labels[currentLabelIndex].title ?? "",
           description: labels[currentLabelIndex].description ?? "",
         ),
