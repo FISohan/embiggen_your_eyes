@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "861720263787",
+    "project_id": "embiggen-your-eyes-69013",
+    "storage_bucket": "embiggen-your-eyes-69013.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:861720263787:android:bf27266a56d1ae97d2052e",
+        "android_client_info": {
+          "package_name": "com.example.embiggen_your_eyes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfk9ee3sFrhzA8Dm8ZO5sufUReth2gRew"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

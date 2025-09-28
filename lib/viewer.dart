@@ -69,6 +69,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   late AnimationController _panAnimationController;
   Animation<Offset>? _panAnimation;
   bool _aiSearch = false;
+  bool _showSearchPanel = false;
 
   Offset? _snapshotBoxStart;
   Size? _snapshotBoxSize;
@@ -571,7 +572,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
     final canvas = ui.Canvas(recorder);
 
     final destRect = Rect.fromLTWH(0, 0, w, h);
-    final srcRect = Rect.fromLTWH(x, y, w, h);
+    final srcRect = Rect.fromLTWH(x + 3.0, y + 3.0, w - 4.0, h - 4.0);
     canvas.drawImageRect(originalImage, srcRect, destRect, Paint());
 
     // 6. Stop recording and finalize the picture
@@ -590,7 +591,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
     RenderRepaintBoundary? boundary =
         _repaintBoundaryKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary;
-    double pixelRatio = 2.0;
+    double pixelRatio = MediaQuery.devicePixelRatioOf(context);
     ui.Image img = await boundary.toImage(pixelRatio: pixelRatio);
     return await _cropUiImage(
       img,
@@ -605,14 +606,15 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
     if (_aiSearch) {
       _snapShot = await _capturePng();
       setState(() {
-        _aiSearch = true;
+        _showSearchPanel = true;
+        _snapshotBoxSize = null;
+        _snapshotBoxStart = null;
       });
       return;
     }
 
     final Offset val = event.velocity.pixelsPerSecond;
     const double flingDampingFactor = 0.1;
-    print(val.distanceSquared);
     if (val.distanceSquared > 100.0) {
       final Offset targatedOffset = initialPos + (val * flingDampingFactor);
       _panAnimation = _panAnimationController.drive(
@@ -637,7 +639,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 _buildCanvas(),
                 _buildZoomControllPanel(),
                 _buildZoomLebelAndSearchPanel(),
-                if (_aiSearch && _snapShot != null) _buildSearchPanel(),
+                if (_snapShot != null && _showSearchPanel) _buildSearchPanel(),
                 if (isShowingLabel) ..._buildLabelOverlays(),
 
                 if (showCustomLabelUi && currentLabelIndex != -1)
@@ -653,7 +655,14 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(8.0),
       child: Align(
         alignment: Alignment.topLeft,
-        child: Searchpanel(image: _snapShot),
+        child: Searchpanel(
+          image: _snapShot,
+          onClose: () {
+            setState(() {
+              _showSearchPanel = false;
+            });
+          },
+        ),
       ),
     );
   }
