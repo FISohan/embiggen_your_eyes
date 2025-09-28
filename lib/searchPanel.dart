@@ -13,8 +13,11 @@ class _ScrollableResultText extends StatelessWidget {
   final bool showAddButton;
   final VoidCallback? onAddLabel;
 
-  const _ScrollableResultText(
-      {required this.text, this.showAddButton = false, this.onAddLabel});
+  const _ScrollableResultText({
+    required this.text,
+    this.showAddButton = false,
+    this.onAddLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +35,12 @@ class _ScrollableResultText extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: SingleChildScrollView(
-            child: MarkdownBlock(data: text ?? "Wait.."),
+            child: MarkdownBlock(
+              data: text ?? "Wait..",
+              config: MarkdownConfig(
+                configs: [PConfig(textStyle: TextStyle(color: Colors.white))],
+              ),
+            ),
           ),
         ),
         if (showAddButton)
@@ -54,7 +62,7 @@ class _ScrollableResultText extends StatelessWidget {
 // --- Modular Action Button Widget (Compact) ---
 // Simplified to just an icon button without a text label
 class _ActionButton extends StatelessWidget {
-// ... (rest of the file is unchanged)
+  // ... (rest of the file is unchanged)
   final IconData icon;
   final VoidCallback? onTap;
   final double size;
@@ -98,12 +106,13 @@ class Searchpanel extends StatefulWidget {
   final String? creditLink;
   final Function(String responseText)? onAddLabel;
 
-  const Searchpanel(
-      {super.key,
-      required this.image,
-      this.onClose,
-      this.creditLink,
-      this.onAddLabel});
+  const Searchpanel({
+    super.key,
+    required this.image,
+    this.onClose,
+    this.creditLink,
+    this.onAddLabel,
+  });
 
   @override
   State<Searchpanel> createState() => _SearchpanelState();
@@ -183,7 +192,8 @@ class _SearchpanelState extends State<Searchpanel> {
                     _ActionButton(
                       icon: Icons.search,
                       onTap: () {
-final prompt = '''
+                        final prompt =
+                            '''
 You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
 
 **IMPORTANT INSTRUCTIONS:**
@@ -211,7 +221,7 @@ Using a bulleted list, point out any notable features visible *within this cropp
 Conclude with one or two fascinating and confirmed facts about the identified object or phenomenon.
 ''';
                         setState(() {
-                          responseText.clear();
+                         // responseText.clear();
                           contentTextStream = askAI(prompt, widget.image!);
                         });
                       },
@@ -235,42 +245,45 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                 const SizedBox(height: 16),
 
                 // --- Scrollable Text Widget Section (3rd Element, takes remaining space) ---
-                                if (contentTextStream != null) // Check for content existence
-                                  Expanded(
-                                    child: StreamBuilder(
-                                      stream: contentTextStream,
-                                      builder: (context, asyncSnapshot) {
-                                        if (asyncSnapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Center(child: CircularProgressIndicator());
-                                        }
-                
-                                        if (asyncSnapshot.hasError) {
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
-                                              style: TextStyle(color: Colors.red),
-                                            ),
-                                          );
-                                        }
-                                        if (asyncSnapshot.hasData) {
-                                          responseText.write(asyncSnapshot.data!.text);
-                                        }
-                
-                                        bool isDone = asyncSnapshot.connectionState == ConnectionState.done;
-                
-                                        return _ScrollableResultText(
-                                          text: responseText.toString(),
-                                          showAddButton: isDone && responseText.isNotEmpty,
-                                          onAddLabel: () {
-                                            widget.onAddLabel?.call(responseText.toString());
-                                            widget.onClose?.call();
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  )                else
+                if (contentTextStream != null) // Check for content existence
+                  Expanded(
+                    child: StreamBuilder(
+                      stream: contentTextStream,
+                      builder: (context, asyncSnapshot) {
+                        if (asyncSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+
+                        if (asyncSnapshot.hasError) {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
+                        if (asyncSnapshot.hasData) {
+                          responseText.write(asyncSnapshot.data!.text);
+                        }
+
+                        bool isDone =
+                            asyncSnapshot.connectionState ==
+                            ConnectionState.done;
+
+                        return _ScrollableResultText(
+                          text: responseText.toString(),
+                          showAddButton: isDone && responseText.isNotEmpty,
+                          onAddLabel: () {
+                            widget.onAddLabel?.call(responseText.toString());
+                            widget.onClose?.call();
+                          },
+                        );
+                      },
+                    ),
+                  )
+                else
                   // Placeholder/Spacer if no text result is present
                   Expanded(
                     child: Center(

@@ -493,7 +493,14 @@ class _BlurryCardState extends State<BlurryCard> {
               const SizedBox(height: 8),
               Expanded(
                 child: SingleChildScrollView(
-                  child: MarkdownBlock(data: widget.description),
+                  child: MarkdownBlock(
+                    data: widget.description,
+                    config: MarkdownConfig(
+                      configs: [
+                        PConfig(textStyle: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
