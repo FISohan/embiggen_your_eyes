@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:stellar_zoom/card.dart';
 import 'package:stellar_zoom/convert.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
@@ -10,6 +12,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:hive/hive.dart';
+import 'package:stellar_zoom/searchPanel.dart';
 
 class Viewer extends StatefulWidget {
   final Map<int, Size> resolutionTable;
@@ -55,6 +58,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   int currentLabelIndex = -1;
   bool isShowingLabel = true;
   Map<int, List<List<ui.Image?>>>? image = {};
+  final GlobalKey _repaintBoundaryKey = GlobalKey();
 
   // Cache management
   static const int maxCacheSizeInBytes = 256 * 1024 * 1024; // 256 MB
@@ -64,6 +68,11 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   Animation<Offset>? _positionAnimation;
   late AnimationController _panAnimationController;
   Animation<Offset>? _panAnimation;
+  bool _aiSearch = false;
+
+  Offset? _snapshotBoxStart;
+  Size? _snapshotBoxSize;
+  Uint8List? _snapShot;
 
   int _calculateCacheSize() {
     int size = 0;
@@ -459,10 +468,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       nextZoomLevel--;
     }
 
-    if (nextZoomLevel < 1) {
-      nextZoomLevel = 1;
-      nextScale = max(nextScale, 0.4);
-    }
+    // if (nextZoomLevel < 1) {
+    //   nextZoomLevel = 1;
+    //   nextScale = max(nextScale, 0.4);
+    // }
 
     // Correct focal point calculation for discrete zoom levels
     final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
@@ -536,14 +545,71 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   }
 
   void _onPanMove(DragUpdateDetails event) {
-    //  print(event.delta.dx / event.timeStamp.inMilliseconds);
+    if (_aiSearch) {
+      setState(() {
+        _snapshotBoxSize = Size(
+          event.localPosition.dx - _snapshotBoxStart!.dx,
+          event.localPosition.dy - _snapshotBoxStart!.dy,
+        );
+      });
+      return;
+    }
     setState(() {
       initialPos += event.delta;
       _startDebounceTimer();
     });
   }
 
-  void _onPanEnd(DragEndDetails event) {
+  Future<Uint8List?> _cropUiImage(
+    ui.Image originalImage,
+    double x,
+    double y,
+    double w,
+    double h,
+  ) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+
+    final destRect = Rect.fromLTWH(0, 0, w, h);
+    final srcRect = Rect.fromLTWH(x, y, w, h);
+    canvas.drawImageRect(originalImage, srcRect, destRect, Paint());
+
+    // 6. Stop recording and finalize the picture
+    final picture = recorder.endRecording();
+
+    final croppedImage = await picture.toImage(w.round(), h.round());
+
+    picture.dispose(); // Clean up the picture
+
+    final bytes = await croppedImage.toByteData(format: ui.ImageByteFormat.png);
+    if (bytes == null) return null;
+    return bytes.buffer.asUint8List();
+  }
+
+  Future<Uint8List?> _capturePng() async {
+    RenderRepaintBoundary? boundary =
+        _repaintBoundaryKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary;
+    double pixelRatio = 2.0;
+    ui.Image img = await boundary.toImage(pixelRatio: pixelRatio);
+    return await _cropUiImage(
+      img,
+      _snapshotBoxStart!.dx * pixelRatio,
+      _snapshotBoxStart!.dy * pixelRatio,
+      _snapshotBoxSize!.width * pixelRatio,
+      _snapshotBoxSize!.height * pixelRatio,
+    );
+  }
+
+  void _onPanEnd(DragEndDetails event) async {
+    if (_aiSearch) {
+      _snapShot = await _capturePng();
+      setState(() {
+        _aiSearch = true;
+      });
+      return;
+    }
+
     final Offset val = event.velocity.pixelsPerSecond;
     const double flingDampingFactor = 0.1;
     print(val.distanceSquared);
@@ -571,6 +637,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 _buildCanvas(),
                 _buildZoomControllPanel(),
                 _buildZoomLebelAndSearchPanel(),
+                if (_aiSearch && _snapShot != null) _buildSearchPanel(),
                 if (isShowingLabel) ..._buildLabelOverlays(),
 
                 if (showCustomLabelUi && currentLabelIndex != -1)
@@ -578,6 +645,16 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 _buildCreditLink(),
               ],
             ),
+    );
+  }
+
+  Widget _buildSearchPanel() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Searchpanel(image: _snapShot),
+      ),
     );
   }
 
@@ -596,6 +673,13 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
         },
         child: GestureDetector(
           onPanStart: (event) {
+            if (_aiSearch) {
+              setState(() {
+                _snapshotBoxStart = event.localPosition;
+              });
+              return;
+            }
+
             _panAnimationController.stop();
             _animationController.stop();
           },
@@ -621,20 +705,26 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
               });
             }
           },
-          child: CustomPaint(
-            painter: Painter(
-              screenSize: screenSize,
-              scale: scale,
-              initialPos: initialPos,
-              viewPortSize: viewPortSize,
-              images: image![currentZoomLevel],
-              viewportOffset: viewportOffset,
-              zoomLevel: currentZoomLevel,
-              onLoadTileRequest: (_) {},
-              labels: labels,
-              resolutionTable: resolutionTable,
-              currentRes: _getCurrentResolution(),
-              isShowLabel: isShowingLabel,
+          child: RepaintBoundary(
+            key: _repaintBoundaryKey,
+            child: CustomPaint(
+              painter: Painter(
+                screenSize: screenSize,
+                scale: scale,
+                initialPos: initialPos,
+                viewPortSize: viewPortSize,
+                images: image![currentZoomLevel],
+                viewportOffset: viewportOffset,
+                zoomLevel: currentZoomLevel,
+                onLoadTileRequest: (_) {},
+                labels: labels,
+                resolutionTable: resolutionTable,
+                currentRes: _getCurrentResolution(),
+                isShowLabel: isShowingLabel,
+                isAiSearch: _aiSearch,
+                snapshotBoxSize: _snapshotBoxSize,
+                snapshotBoxStartPos: _snapshotBoxStart,
+              ),
             ),
           ),
         ),
@@ -716,6 +806,17 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 onChanged: (v) {
                   setState(() {
                     isShowingLabel = v;
+                  });
+                },
+              ),
+              const SizedBox(width: 10), // Separator
+              // 2. "Show Label" Switch (New, assumes 'isShowingLabel' is the state variable)
+              _buildSwitchControl(
+                label: 'AI Search',
+                value: _aiSearch,
+                onChanged: (v) {
+                  setState(() {
+                    _aiSearch = v;
                   });
                 },
               ),

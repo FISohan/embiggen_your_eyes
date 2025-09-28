@@ -19,6 +19,9 @@ class Painter extends CustomPainter {
   final Size currentRes;
   final Map<int, Size> resolutionTable;
   final bool isShowLabel;
+  final Size? snapshotBoxSize;
+  final Offset? snapshotBoxStartPos;
+  final bool isAiSearch;
   Painter({
     required this.screenSize,
     required this.scale,
@@ -32,6 +35,9 @@ class Painter extends CustomPainter {
     required this.resolutionTable,
     required this.currentRes,
     required this.isShowLabel,
+    required this.isAiSearch,
+    this.snapshotBoxSize,
+    this.snapshotBoxStartPos,
   }) {
     imgResolution = Size(
       resolutionTable[zoomLevel]?.width ?? 0,
@@ -44,6 +50,26 @@ class Painter extends CustomPainter {
     _drawTiles(canvas);
     if (isShowLabel) {
       _drawLabelBounndingBox(canvas);
+    }
+    if (isAiSearch) {
+      _drawSnapShotBoundingBox(canvas);
+    }
+  }
+
+  _drawSnapShotBoundingBox(Canvas c) {
+    if (snapshotBoxSize != null && snapshotBoxStartPos != null) {
+      Rect rect = Rect.fromLTWH(
+        snapshotBoxStartPos!.dx,
+        snapshotBoxStartPos!.dy,
+        snapshotBoxSize!.width,
+        snapshotBoxSize!.height,
+      );
+      c.drawRect(
+        rect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..color = Colors.tealAccent,
+      );
     }
   }
 
