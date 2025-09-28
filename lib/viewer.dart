@@ -657,6 +657,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
         alignment: Alignment.topLeft,
         child: Searchpanel(
           image: _snapShot,
+          creditLink: widget.creditLink,
           onClose: () {
             setState(() {
               _showSearchPanel = false;

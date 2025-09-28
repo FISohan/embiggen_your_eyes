@@ -19,6 +19,7 @@ dependencies:
   flutter_tts: ^3.8.3
   firebase_core: ^4.1.1
   firebase_ai: ^3.3.0
+  markdown_widget: ^2.3.2+8
 
 dev_dependencies:
   flutter_test:

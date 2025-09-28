@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:markdown_widget/markdown_widget.dart';
 import 'package:stellar_zoom/ai.dart';
 // Removed: import 'tts_service.dart';
 
@@ -20,7 +21,7 @@ class _ScrollableResultText extends StatelessWidget {
         top: 8.0,
         bottom: 8.0,
         left: 8.0,
-        right: 40.0,
+        right: 8.0,
       ),
       // A slight, subtle border for visual separation
       decoration: BoxDecoration(
@@ -28,10 +29,7 @@ class _ScrollableResultText extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: SingleChildScrollView(
-        child: Text(
-          text ?? "Wait..",
-          style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-        ),
+        child: MarkdownBlock(data: text ?? "Wait.."),
       ),
     );
   }
@@ -79,11 +77,15 @@ class _ActionButton extends StatelessWidget {
 // --- Main Searchpanel Widget ---
 class Searchpanel extends StatefulWidget {
   final Uint8List? image;
-  // Callback to notify the parent when the panel should close
   final VoidCallback? onClose;
-  // The result text to be displayed and scrolled
+  final String? creditLink;
 
-  const Searchpanel({super.key, required this.image, this.onClose});
+  const Searchpanel({
+    super.key,
+    required this.image,
+    this.onClose,
+    this.creditLink,
+  });
 
   @override
   State<Searchpanel> createState() => _SearchpanelState();
@@ -98,7 +100,7 @@ class _SearchpanelState extends State<Searchpanel> {
     // Determine the text content for the panel.
     return SizedBox(
       width: 300,
-      height: 450,
+      height: 490,
       child: Stack(
         children: [
           // 1. The blurry, transparent background layer (Glassmorphism effect)
@@ -108,8 +110,8 @@ class _SearchpanelState extends State<Searchpanel> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(
-                    100,
+                  color: Colors.white.withAlpha(
+                    30,
                   ), // Slightly darker for better contrast
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -163,12 +165,36 @@ class _SearchpanelState extends State<Searchpanel> {
                     _ActionButton(
                       icon: Icons.search,
                       onTap: () {
+final prompt = '''
+You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
+
+**IMPORTANT INSTRUCTIONS:**
+*   **Language:** Explain everything in simple, easy-to-understand English.
+*   **Accuracy:** Prioritize scientific accuracy. If the image is unclear or you are not certain about an identification, clearly state your uncertainty rather than guessing. Do not invent information.
+
+**CONTEXT:**
+The image is a user-selected, zoomed-in region from a larger astronomical photograph. Use the context from this URL about the original, full image to inform your analysis: ${widget.creditLink}
+
+**RESPONSE FORMAT:**
+Your response must be formatted in Markdown as follows:
+
+### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
+
+**1. What Am I Seeing?**
+Based on the visual information and the provided context, identify the most likely celestial objects or phenomena visible. Describe the general type of object and its main characteristics.
+
+**2. Scientific Context:**
+If known, name the larger object this crop belongs to. Provide a concise, scientific explanation of what is being shown in this specific region.
+
+**3. Key Features:**
+Using a bulleted list, point out any notable features visible *within this cropped image*. This could include prominent stars, dust lanes, gas clouds, or unique shapes.
+
+**4. Interesting Facts:**
+Conclude with one or two fascinating and confirmed facts about the identified object or phenomenon.
+''';
                         setState(() {
                           responseText.clear();
-                          contentTextStream = askAI(
-                            "What's in the picture?",
-                            widget.image!,
-                          );
+                          contentTextStream = askAI(prompt, widget.image!);
                         });
                       },
                     ),
@@ -204,9 +230,12 @@ class _SearchpanelState extends State<Searchpanel> {
                             }
 
                             if (asyncSnapshot.hasError) {
-                              return Text(
-                                "Something went wrong:: ${asyncSnapshot.error}",
-                                style: TextStyle(color: Colors.red),
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
+                                  style: TextStyle(color: Colors.red),
+                                ),
                               );
                             }
                             if (asyncSnapshot.hasData) {
@@ -216,27 +245,6 @@ class _SearchpanelState extends State<Searchpanel> {
                               text: responseText.toString(),
                             );
                           },
-                        ),
-
-                        // Play/Pause Audio Button (Overlaid on the top right corner of the text widget)
-                        Positioned(
-                          top: 4, // Compact position
-                          right: 4, // Compact position
-                          child: _ActionButton(
-                            icon: Icons
-                                .play_circle_filled, // Hardcoded icon (no state logic)
-                            size: 24, // Compact size
-                            padding: const EdgeInsets.all(
-                              4.0,
-                            ), // Compact padding
-                            // Placeholder onTap to show UI is functional but implementation is removed
-                            onTap: () {
-                              if (kDebugMode)
-                                print(
-                                  'Play/Pause UI button tapped (Implementation needed)',
-                                );
-                            },
-                          ),
                         ),
                       ],
                     ),
