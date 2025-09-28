@@ -10,27 +10,43 @@ import 'package:stellar_zoom/ai.dart';
 /// Renders a scrollable text area for potentially lengthy results.
 class _ScrollableResultText extends StatelessWidget {
   final String? text;
+  final bool showAddButton;
+  final VoidCallback? onAddLabel;
 
-  const _ScrollableResultText({required this.text});
+  const _ScrollableResultText(
+      {required this.text, this.showAddButton = false, this.onAddLabel});
 
   @override
   Widget build(BuildContext context) {
-    // Padding adjusted to create space for the overlaid button in the top right corner
-    return Container(
-      padding: const EdgeInsets.only(
-        top: 8.0,
-        bottom: 8.0,
-        left: 8.0,
-        right: 8.0,
-      ),
-      // A slight, subtle border for visual separation
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        child: MarkdownBlock(data: text ?? "Wait.."),
-      ),
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.only(
+            top: 8.0,
+            bottom: 8.0,
+            left: 8.0,
+            right: 38.0, // Make space for the button
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SingleChildScrollView(
+            child: MarkdownBlock(data: text ?? "Wait.."),
+          ),
+        ),
+        if (showAddButton)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: _ActionButton(
+              icon: Icons.label_outline,
+              onTap: onAddLabel,
+              size: 18,
+              padding: const EdgeInsets.all(6),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -38,6 +54,7 @@ class _ScrollableResultText extends StatelessWidget {
 // --- Modular Action Button Widget (Compact) ---
 // Simplified to just an icon button without a text label
 class _ActionButton extends StatelessWidget {
+// ... (rest of the file is unchanged)
   final IconData icon;
   final VoidCallback? onTap;
   final double size;
@@ -79,13 +96,14 @@ class Searchpanel extends StatefulWidget {
   final Uint8List? image;
   final VoidCallback? onClose;
   final String? creditLink;
+  final Function(String responseText)? onAddLabel;
 
-  const Searchpanel({
-    super.key,
-    required this.image,
-    this.onClose,
-    this.creditLink,
-  });
+  const Searchpanel(
+      {super.key,
+      required this.image,
+      this.onClose,
+      this.creditLink,
+      this.onAddLabel});
 
   @override
   State<Searchpanel> createState() => _SearchpanelState();
@@ -199,6 +217,7 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                       },
                     ),
                     // Save (Download) Button
+                    // Save (Download) Button
                     _ActionButton(
                       icon: Icons.download,
                       onTap: () {
@@ -216,40 +235,42 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                 const SizedBox(height: 16),
 
                 // --- Scrollable Text Widget Section (3rd Element, takes remaining space) ---
-                if (contentTextStream != null) // Check for content existence
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        // Modular text widget for conditional rendering and scrolling
-                        StreamBuilder(
-                          stream: contentTextStream,
-                          builder: (context, asyncSnapshot) {
-                            if (asyncSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            }
-
-                            if (asyncSnapshot.hasError) {
-                              return Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              );
-                            }
-                            if (asyncSnapshot.hasData) {
-                              responseText.write(asyncSnapshot.data!.text);
-                            }
-                            return _ScrollableResultText(
-                              text: responseText.toString(),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  )
-                else
+                                if (contentTextStream != null) // Check for content existence
+                                  Expanded(
+                                    child: StreamBuilder(
+                                      stream: contentTextStream,
+                                      builder: (context, asyncSnapshot) {
+                                        if (asyncSnapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Center(child: CircularProgressIndicator());
+                                        }
+                
+                                        if (asyncSnapshot.hasError) {
+                                          return Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
+                                              style: TextStyle(color: Colors.red),
+                                            ),
+                                          );
+                                        }
+                                        if (asyncSnapshot.hasData) {
+                                          responseText.write(asyncSnapshot.data!.text);
+                                        }
+                
+                                        bool isDone = asyncSnapshot.connectionState == ConnectionState.done;
+                
+                                        return _ScrollableResultText(
+                                          text: responseText.toString(),
+                                          showAddButton: isDone && responseText.isNotEmpty,
+                                          onAddLabel: () {
+                                            widget.onAddLabel?.call(responseText.toString());
+                                            widget.onClose?.call();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  )                else
                   // Placeholder/Spacer if no text result is present
                   Expanded(
                     child: Center(

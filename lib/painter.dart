@@ -22,6 +22,7 @@ class Painter extends CustomPainter {
   final Size? snapshotBoxSize;
   final Offset? snapshotBoxStartPos;
   final bool isAiSearch;
+  final bool shouldShow;
   Painter({
     required this.screenSize,
     required this.scale,
@@ -38,6 +39,7 @@ class Painter extends CustomPainter {
     required this.isAiSearch,
     this.snapshotBoxSize,
     this.snapshotBoxStartPos,
+    required this.shouldShow,
   }) {
     imgResolution = Size(
       resolutionTable[zoomLevel]?.width ?? 0,
@@ -51,7 +53,7 @@ class Painter extends CustomPainter {
     if (isShowLabel) {
       _drawLabelBounndingBox(canvas);
     }
-    if (isAiSearch) {
+    if (shouldShow) {
       _drawSnapShotBoundingBox(canvas);
     }
   }

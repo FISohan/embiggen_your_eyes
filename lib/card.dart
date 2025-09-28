@@ -1,15 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:markdown_widget/markdown_widget.dart';
 import 'package:stellar_zoom/tts_service.dart';
 
 // 1. Define the enum for the categories based on the image
-enum LabelCategory {
-  stars,
-  galaxies,
-  nebula,
-  exotic,
-  exoplanet,
-}
+enum LabelCategory { stars, galaxies, nebula, exotic, exoplanet, ai }
 
 // Extension to provide display details for the enum
 extension LabelCategoryDetails on LabelCategory {
@@ -25,6 +20,8 @@ extension LabelCategoryDetails on LabelCategory {
         return 'EXOTIC';
       case LabelCategory.exoplanet:
         return 'EXOPLANET';
+      case LabelCategory.ai:
+        return 'AI';
     }
   }
 
@@ -40,6 +37,8 @@ extension LabelCategoryDetails on LabelCategory {
         return Icons.all_inclusive; // Swirl/infinity-like
       case LabelCategory.exoplanet:
         return Icons.circle; // Simple planet/dot
+      case LabelCategory.ai:
+        return Icons.auto_awesome;
     }
   }
 
@@ -55,6 +54,8 @@ extension LabelCategoryDetails on LabelCategory {
         return Colors.yellow;
       case LabelCategory.exoplanet:
         return Colors.teal;
+      case LabelCategory.ai:
+        return Colors.lightBlueAccent;
     }
   }
 
@@ -72,7 +73,8 @@ class BlurryCard extends StatefulWidget {
   final String title;
   final String description;
   final VoidCallback? onClosePressed; // Used for the button next to 'Add Label'
-  final VoidCallback? onFloatingClosePressed; // NEW: For the top-right 'X' button
+  final VoidCallback?
+  onFloatingClosePressed; // NEW: For the top-right 'X' button
   final VoidCallback? onDeletePressed;
   final bool editable;
   // 2. Updated onAddLabel to include LabelCategory
@@ -82,7 +84,8 @@ class BlurryCard extends StatefulWidget {
     double width,
     double height,
     LabelCategory category, // NEW: Category input
-  )? onAddLabel;
+  )?
+  onAddLabel;
 
   final void Function(double width, double height)? boxValueChange;
 
@@ -111,7 +114,7 @@ class _BlurryCardState extends State<BlurryCard> {
   final _heightController = TextEditingController();
   final TtsService _ttsService = TtsService();
   bool _isSpeaking = false;
-  
+
   // 3. State variable for the selected category
   LabelCategory? _selectedCategory;
 
@@ -174,7 +177,10 @@ class _BlurryCardState extends State<BlurryCard> {
           ),
 
           // Conditional rendering based on the 'editable' parameter
-          if (widget.editable) _buildEditableForm(widget.boxValueChange) else _buildDisplayCard(),
+          if (widget.editable)
+            _buildEditableForm(widget.boxValueChange)
+          else
+            _buildDisplayCard(),
         ],
       ),
     );
@@ -217,7 +223,9 @@ class _BlurryCardState extends State<BlurryCard> {
           borderSide: const BorderSide(color: Colors.redAccent, width: 1),
         ),
       ),
-      dropdownColor: Colors.grey.shade900.withOpacity(0.9), // Dark background for dropdown
+      dropdownColor: Colors.grey.shade900.withOpacity(
+        0.9,
+      ), // Dark background for dropdown
       style: const TextStyle(color: Colors.white),
       items: LabelCategory.values.map((category) {
         return DropdownMenuItem<LabelCategory>(
@@ -226,10 +234,7 @@ class _BlurryCardState extends State<BlurryCard> {
             children: [
               Icon(category.icon, color: category.color),
               const SizedBox(width: 8),
-              Text(
-                category.name,
-                style: const TextStyle(color: Colors.white),
-              ),
+              Text(category.name, style: const TextStyle(color: Colors.white)),
             ],
           ),
         );
@@ -243,12 +248,7 @@ class _BlurryCardState extends State<BlurryCard> {
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            20.0,
-            48.0,
-            20.0,
-            20.0,
-          ),
+          padding: const EdgeInsets.fromLTRB(20.0, 48.0, 20.0, 20.0),
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -292,8 +292,12 @@ class _BlurryCardState extends State<BlurryCard> {
                         child: _buildTextFormField(
                           onChange: (value) {
                             final double? width = double.tryParse(value);
-                            final double? height = double.tryParse(_heightController.text);
-                            if (width != null && height != null && boxValueChange != null) {
+                            final double? height = double.tryParse(
+                              _heightController.text,
+                            );
+                            if (width != null &&
+                                height != null &&
+                                boxValueChange != null) {
                               boxValueChange(width, height);
                             }
                           },
@@ -319,9 +323,13 @@ class _BlurryCardState extends State<BlurryCard> {
                           'Box Height',
                           keyboardType: TextInputType.number,
                           onChange: (value) {
-                            final double? width = double.tryParse(_widthController.text);
+                            final double? width = double.tryParse(
+                              _widthController.text,
+                            );
                             final double? height = double.tryParse(value);
-                            if (width != null && height != null && boxValueChange != null) {
+                            if (width != null &&
+                                height != null &&
+                                boxValueChange != null) {
                               boxValueChange(width, height);
                             }
                           },
@@ -345,10 +353,13 @@ class _BlurryCardState extends State<BlurryCard> {
                       // Close button (uses existing onClosePressed)
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: widget.onClosePressed, // Uses onClosePressed
+                          onPressed:
+                              widget.onClosePressed, // Uses onClosePressed
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                            side: BorderSide(
+                              color: Colors.white.withOpacity(0.5),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -364,7 +375,8 @@ class _BlurryCardState extends State<BlurryCard> {
                             // Validate all form fields
                             if (_formKey.currentState?.validate() ?? false) {
                               // 4. Update onAddLabel logic to pass the category
-                              if (widget.onAddLabel != null && _selectedCategory != null) {
+                              if (widget.onAddLabel != null &&
+                                  _selectedCategory != null) {
                                 final double? width = double.tryParse(
                                   _widthController.text,
                                 );
@@ -434,7 +446,9 @@ class _BlurryCardState extends State<BlurryCard> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-        errorStyle: const TextStyle(color: Colors.redAccent), // Style for error text
+        errorStyle: const TextStyle(
+          color: Colors.redAccent,
+        ), // Style for error text
         filled: true,
         fillColor: Colors.black.withOpacity(0.2),
         border: OutlineInputBorder(
@@ -454,7 +468,6 @@ class _BlurryCardState extends State<BlurryCard> {
       ),
     );
   }
-
 
   Widget _buildDisplayCard() {
     return Stack(
@@ -480,10 +493,7 @@ class _BlurryCardState extends State<BlurryCard> {
               const SizedBox(height: 8),
               Expanded(
                 child: SingleChildScrollView(
-                  child: Text(
-                    widget.description,
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
-                  ),
+                  child: MarkdownBlock(data: widget.description),
                 ),
               ),
             ],

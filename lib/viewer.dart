@@ -73,6 +73,8 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
 
   Offset? _snapshotBoxStart;
   Size? _snapshotBoxSize;
+  bool _shouldShow = true;
+
   Uint8List? _snapShot;
 
   int _calculateCacheSize() {
@@ -607,8 +609,9 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       _snapShot = await _capturePng();
       setState(() {
         _showSearchPanel = true;
-        _snapshotBoxSize = null;
-        _snapshotBoxStart = null;
+        _shouldShow = false;
+        // _snapshotBoxSize = null;
+        // _snapshotBoxStart = null;
       });
       return;
     }
@@ -658,6 +661,57 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
         child: Searchpanel(
           image: _snapShot,
           creditLink: widget.creditLink,
+          onAddLabel: (responseText) {
+            if (_snapshotBoxStart == null || _snapshotBoxSize == null) return;
+
+            // 1. Parse Title and Description
+            final lines = responseText.split('\n');
+            String title = 'Unknown';
+            String description = responseText;
+            final titleLineIndex = lines.indexWhere(
+              (line) => line.startsWith('### '),
+            );
+            if (titleLineIndex != -1) {
+              title = lines[titleLineIndex].substring(4);
+              lines.removeAt(titleLineIndex);
+              description = lines.join('\n');
+            }
+            Rect r = Rect.fromLTWH(
+              _snapshotBoxStart!.dx,
+              _snapshotBoxStart!.dy,
+              _snapshotBoxSize!.width,
+              _snapshotBoxSize!.height,
+            );
+            // 2. Calculate Position and Bounding Box
+            final screenPosition =
+                _snapshotBoxStart! +
+                Offset(
+                  _snapshotBoxSize!.width / 2,
+                  _snapshotBoxSize!.height / 2,
+                );
+            final imageSpacePos = screenToImageSpace(
+              imageCurrentRes: _getCurrentResolution(),
+              imageOffset: initialPos,
+              pointerLocation: r.center,
+              scale: scale,
+            );
+
+            // 3. Create the Label
+            final newLabel = Lebel(
+              pos: imageSpacePos,
+              originalSize: _getCurrentResolution(),
+              title: title,
+              description: description,
+              boundingBox: _snapshotBoxSize!,
+              category: LabelCategory.ai,
+            );
+
+            // 4. Save and Rebuild
+            setState(() {
+              labels.add(newLabel);
+              _labelBox.add(newLabel);
+            });
+          },
           onClose: () {
             setState(() {
               _showSearchPanel = false;
@@ -686,6 +740,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
             if (_aiSearch) {
               setState(() {
                 _snapshotBoxStart = event.localPosition;
+                _shouldShow = true;
               });
               return;
             }
@@ -734,6 +789,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 isAiSearch: _aiSearch,
                 snapshotBoxSize: _snapshotBoxSize,
                 snapshotBoxStartPos: _snapshotBoxStart,
+                shouldShow: _shouldShow,
               ),
             ),
           ),
