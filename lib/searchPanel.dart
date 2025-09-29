@@ -219,41 +219,43 @@ class _SearchpanelState extends State<Searchpanel> {
                       onTap: _isSearching
                           ? null
                           : () {
-                              final String languageInstruction;
-                              if (_selectedLanguage == 'English') {
-                                languageInstruction =
-                                'Explain everything in simple, easy-to-understand English.';
-                              } else {
-                                languageInstruction =
-                                'Explain everything in simple, easy-to-understand $_selectedLanguage.';
-                              }
                               final prompt = '''
-                                You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
+**ROLE AND TASK:**
+You are a Senior Research Astronomer and Astrophysicist specializing in deep-field imaging and star formation science. Your primary task is to conduct a detailed, scientifically rigorous analysis of the provided zoomed-in astronomical image. You must use the associated context link to ensure the object's identity, distance, and scientific significance are accurately reflected.
 
-                                **IMPORTANT INSTRUCTIONS:**
-                                *   **Language:** $languageInstruction
-                                *   **Accuracy:** Prioritize scientific accuracy. If the image is unclear or you are not certain about an identification, clearly state your uncertainty rather than guessing. Do not invent information.
+**INPUT DATA:**
+1.  **IMAGE:** [The zoomed-in astronomical photograph to be analyzed is provided separately.]
+2.  **CONTEXT LINK (CRITICAL):** ${widget.creditLink}
+3.  **LANGUAGE:** $_selectedLanguage
 
-                                **CONTEXT:**
-                                The image is a user-selected, zoomed-in region from a larger astronomical photograph. Use the context from this URL about the original, full image to inform your analysis: ${widget.creditLink}
+**GOALS & CONSTRAINTS:**
+* **Tone:** Professional, clear, and accessible to an educated layperson. Avoid overly technical jargon without immediate explanation.
+* **Accuracy First:** All scientific claims must be based on confirmed astronomical data obtained via the context link or related searches. If the image features are ambiguous, state the most probable identity and explicitly mention the uncertainty.
+* **Output Start:** **THE VERY FIRST LINE** of your response must be the title heading (###).
+* **Output Format:** Adhere strictly to the following five-section Markdown structure.
 
-                                **RESPONSE FORMAT:**
-                                Your response must be formatted in Markdown as follows:
+**REQUIRED RESPONSE FORMAT:**
 
-                                ### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
+### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
 
-                                **1. What Am I Seeing?**
-                                Based on the visual information and the provided context, identify the most likely celestial objects or phenomena visible. Describe the general type of object and its main characteristics.
+**1. Core Identification & Visual Context:**
+Based on the input, name the most likely celestial object or phenomenon. Describe the object's general category (e.g., stellar nursery, interacting galaxy pair, stellar jet) and its apparent scale or size relative to the full original image.
 
-                                **2. Scientific Context:**
-                                If known, name the larger object this crop belongs to. Provide a concise, scientific explanation of what is being shown in this specific region.
+**2. Scientific Foundation & Formation Context:**
+Use information from the original source (implied by `${widget.creditLink}`) to provide the official scientific catalog designation (e.g., NGC, Messier, or IC number) and the object's confirmed astronomical distance or redshift value. **Explain the object's formation, evolution, or origin in concise detail** (e.g., created by a supernova, formed via galactic merger, or carved by UV radiation from hot stars).
 
-                                **3. Key Features:**
-                                Using a bulleted list, point out any notable features visible *within this cropped image*. This could include prominent stars, dust lanes, gas clouds, or unique shapes.
+**3. Detailed Feature Analysis (Within Crop):**
+Use a bulleted list to identify and explain at least three distinct, fine-scale features visible **only in the provided zoomed image**.
+* [Feature 1: Descriptive Name] - [Scientific Explanation/Significance]
+* [Feature 2: Descriptive Name] - [Scientific Explanation/Significance]
+* [Feature 3: Descriptive Name] - [Scientific Explanation/Significance]
 
-                                **4. Interesting Facts:**
-                                Conclude with one or two fascinating and confirmed facts about the identified object or phenomenon.
-                              ''';
+**4. Astrophysical Significance:**
+Explain, in a concise paragraph, why this region or object is important to the broader field of astrophysics (e.g., What specific cosmological or stellar evolution models does it support? What new data does it provide?).
+
+**5. Confirmed Facts:**
+Conclude with two confirmed and compelling facts about the celestial body. (Do not repeat the distance, official designation, or primary object name.).
+''';
                               setState(() {
                                 _isSearching = true;
                                 _randomFact = _getNewFact();
