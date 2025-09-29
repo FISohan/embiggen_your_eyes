@@ -358,6 +358,17 @@ class HomePage extends StatelessWidget {
         "creditLink": "https://esawebb.org/images/carinanebula3/",
         "creditTitle": "ESA/Webb",
       },
+      {
+        "title": "Hubble Ultra Deep Field",
+        "id": hubbleUltraDeepField,
+        "resTable": resolutionTableHubbleUltraDeepField,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/wallpaper1/heic0611b.jpg",
+        "creditLink": "https://esahubble.org/images/heic0611b/",
+        "creditTitle": "ESA/Webb",
+      },
     ];
 
     return Padding(

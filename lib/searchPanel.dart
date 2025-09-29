@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_downloader_web/image_downloader_web.dart';
 import 'package:markdown_widget/markdown_widget.dart';
+import 'dart:async';
+import 'dart:math';
 import 'package:stellar_zoom/ai.dart';
+import 'package:stellar_zoom/facts.dart';
 
 // Removed: import 'tts_service.dart';
 
@@ -129,6 +132,31 @@ class _SearchpanelState extends State<Searchpanel> {
   StringBuffer responseText = StringBuffer();
   bool _isDownloading = false;
   bool _isSearching = false;
+  String? _randomFact;
+  String _selectedLanguage = 'English';
+  final List<String> _languages = [
+    'English',
+    'Spanish',
+    'Hindi',
+    'Arabic',
+    'French',
+    'Bengali',
+    'Russian',
+    'Portuguese',
+    'German',
+    'Chinese (Simplified)'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _randomFact = _getNewFact();
+  }
+
+  String _getNewFact() {
+    final random = Random();
+    return spaceFacts[random.nextInt(spaceFacts.length)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,11 +219,19 @@ class _SearchpanelState extends State<Searchpanel> {
                       onTap: _isSearching
                           ? null
                           : () {
+                              final String languageInstruction;
+                              if (_selectedLanguage == 'English') {
+                                languageInstruction =
+                                'Explain everything in simple, easy-to-understand English.';
+                              } else {
+                                languageInstruction =
+                                'Explain everything in simple, easy-to-understand $_selectedLanguage.';
+                              }
                               final prompt = '''
                                 You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
 
                                 **IMPORTANT INSTRUCTIONS:**
-                                *   **Language:** Explain everything in simple, easy-to-understand English.
+                                *   **Language:** $languageInstruction
                                 *   **Accuracy:** Prioritize scientific accuracy. If the image is unclear or you are not certain about an identification, clearly state your uncertainty rather than guessing. Do not invent information.
 
                                 **CONTEXT:**
@@ -220,6 +256,7 @@ class _SearchpanelState extends State<Searchpanel> {
                               ''';
                               setState(() {
                                 _isSearching = true;
+                                _randomFact = _getNewFact();
                                 responseText.clear();
                                 contentTextStream = askAI(prompt, widget.image!);
                               });
@@ -259,6 +296,36 @@ class _SearchpanelState extends State<Searchpanel> {
                               }
                             },
                           ),
+                    PopupMenuButton<String>(
+                      onSelected: (String newValue) {
+                        setState(() {
+                          _selectedLanguage = newValue;
+                        });
+                      },
+                      color: Colors.grey[850]?.withOpacity(0.9),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      tooltip: 'Select Language ($_selectedLanguage)',
+                      offset: const Offset(0, 40),
+                      itemBuilder: (BuildContext context) {
+                        return _languages.map((String language) {
+                          return PopupMenuItem<String>(
+                            value: language,
+                            child: Text(language,
+                                style: const TextStyle(color: Colors.white)),
+                          );
+                        }).toList();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.language,
+                            color: Colors.white, size: 20),
+                      ),
+                    ),
                     _ActionButton(
                       icon: Icons.close,
                       onTap: widget.onClose,
@@ -288,7 +355,23 @@ class _SearchpanelState extends State<Searchpanel> {
                         }
 
                         if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    _randomFact ?? 'Did you know...',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         }
 
                         if (asyncSnapshot.hasError) {

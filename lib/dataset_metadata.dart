@@ -7,6 +7,7 @@ const String sun = "sun";
 const String milkWay = "galaxy222";
 const String carina = "carina";
 const String tapestryOfBlazingStarbirth = "galaxy364";
+const String hubbleUltraDeepField = "glaxxy2334";
 
 final Map<int, Size> resolutionTableMessiar13 = {
   1: Size(1080, 253),
@@ -64,4 +65,11 @@ final Map<int, Size> resolutionTableTapestryOfBlazingStarbirth = {
   3: Size(4320, 2968),
   4: Size(8640, 5936),
   5: Size(17043, 11710),
+};
+
+final Map<int, Size> resolutionTableHubbleUltraDeepField = {
+  1: Size(1080, 1080),
+  2: Size(2160, 2160),
+  3: Size(4320, 4320),
+  4: Size(6200, 6200),
 };

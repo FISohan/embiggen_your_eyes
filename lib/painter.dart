@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:stellar_zoom/convert.dart';
 import 'package:stellar_zoom/dataset_metadata.dart';
+import 'package:stellar_zoom/facts.dart';
 import 'package:stellar_zoom/lebel.dart';
 import 'package:flutter/material.dart';
 
@@ -143,7 +144,7 @@ class Painter extends CustomPainter {
                 y * tileSize * scale + initialPos.dy,
               ),
               Size(tileSize * scale, tileSize * scale),
-              "Fcat afaj ejaj ka",
+              "Loading..",
               canvas,
             );
           }
@@ -158,13 +159,14 @@ class Painter extends CustomPainter {
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: Colors.black, fontSize: 25),
+        style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
+      textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
-    textPainter.layout();
+    textPainter.layout(maxWidth: size.width - 20); // Leave some padding
     Rect rect = Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
-    canvas.drawRect(rect, Paint()..color = Colors.blue);
+    canvas.drawRect(rect, Paint()..color = Colors.black.withOpacity(0.8));
     final Offset textOffset = Offset(
       offset.dx + (size.width - textPainter.width) / 2,
       offset.dy + (size.height - textPainter.height) / 2,
