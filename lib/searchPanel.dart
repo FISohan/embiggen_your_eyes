@@ -45,13 +45,16 @@ class _ScrollableResultText extends StatelessWidget {
         ),
         if (showAddButton)
           Positioned(
-            top: 0,
-            right: 0,
-            child: _ActionButton(
-              icon: Icons.label_outline,
-              onTap: onAddLabel,
-              size: 18,
-              padding: const EdgeInsets.all(6),
+            top: 4,
+            right: 4,
+            child: Tooltip(
+              message: 'Create Label from Result',
+              child: _ActionButton(
+                icon: Icons.label_outline,
+                onTap: onAddLabel,
+                size: 20,
+                padding: const EdgeInsets.all(10.0),
+              ),
             ),
           ),
       ],
@@ -268,16 +271,14 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                           responseText.write(asyncSnapshot.data!.text);
                         }
 
-                        bool isDone =
-                            asyncSnapshot.connectionState ==
-                            ConnectionState.done;
+                        bool isDone = asyncSnapshot.connectionState == ConnectionState.done;
+                        final sanitizedText = responseText.toString().replaceAll('\$', r'\$');
 
                         return _ScrollableResultText(
-                          text: responseText.toString(),
+                          text: sanitizedText,
                           showAddButton: isDone && responseText.isNotEmpty,
                           onAddLabel: () {
                             widget.onAddLabel?.call(responseText.toString());
-                            widget.onClose?.call();
                           },
                         );
                       },

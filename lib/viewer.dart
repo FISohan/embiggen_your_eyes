@@ -683,12 +683,6 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
               _snapshotBoxSize!.height,
             );
             // 2. Calculate Position and Bounding Box
-            final screenPosition =
-                _snapshotBoxStart! +
-                Offset(
-                  _snapshotBoxSize!.width / 2,
-                  _snapshotBoxSize!.height / 2,
-                );
             final imageSpacePos = screenToImageSpace(
               imageCurrentRes: _getCurrentResolution(),
               imageOffset: initialPos,
@@ -738,6 +732,8 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
         child: GestureDetector(
           onPanStart: (event) {
             if (_aiSearch) {
+              _snapshotBoxStart = null;
+              _snapshotBoxSize = null;
               setState(() {
                 _snapshotBoxStart = event.localPosition;
                 _shouldShow = true;
