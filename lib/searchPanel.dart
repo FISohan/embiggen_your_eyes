@@ -2,8 +2,10 @@ import 'dart:ui';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_downloader_web/image_downloader_web.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:stellar_zoom/ai.dart';
+
 // Removed: import 'tts_service.dart';
 
 // --- Modular Text Widget ---
@@ -121,28 +123,27 @@ class Searchpanel extends StatefulWidget {
   State<Searchpanel> createState() => _SearchpanelState();
 }
 
+
 class _SearchpanelState extends State<Searchpanel> {
   Stream<GenerateContentResponse>? contentTextStream;
   StringBuffer responseText = StringBuffer();
+  bool _isDownloading = false;
+  bool _isSearching = false;
 
   @override
   Widget build(BuildContext context) {
-    // Determine the text content for the panel.
     return SizedBox(
       width: 300,
       height: 490,
       child: Stack(
         children: [
-          // 1. The blurry, transparent background layer (Glassmorphism effect)
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(
-                    30,
-                  ), // Slightly darker for better contrast
+                  color: Colors.white.withAlpha(30),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: Colors.white.withAlpha(150),
@@ -152,14 +153,11 @@ class _SearchpanelState extends State<Searchpanel> {
               ),
             ),
           ),
-
-          // 2. Content (Image, Buttons, Text)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // --- Image Section (1st Element) ---
                 Container(
                   height: 150,
                   decoration: BoxDecoration(
@@ -168,7 +166,7 @@ class _SearchpanelState extends State<Searchpanel> {
                   ),
                   child: Center(
                     child: widget.image == null
-                        ? Text(
+                        ? const Text(
                             "Waiting for image...",
                             style: TextStyle(
                               color: Colors.white54,
@@ -184,78 +182,113 @@ class _SearchpanelState extends State<Searchpanel> {
                           ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // --- Action Button Row (2nd Element - Search, Save, Close) ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Search Button
                     _ActionButton(
                       icon: Icons.search,
-                      onTap: () {
-                        final prompt =
-                            '''
-You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
+                      onTap: _isSearching
+                          ? null
+                          : () {
+                              final prompt = '''
+                                You are an expert astronomer and astrophysicist. Your goal is to analyze the provided image and explain it clearly.
 
-**IMPORTANT INSTRUCTIONS:**
-*   **Language:** Explain everything in simple, easy-to-understand English.
-*   **Accuracy:** Prioritize scientific accuracy. If the image is unclear or you are not certain about an identification, clearly state your uncertainty rather than guessing. Do not invent information.
+                                **IMPORTANT INSTRUCTIONS:**
+                                *   **Language:** Explain everything in simple, easy-to-understand English.
+                                *   **Accuracy:** Prioritize scientific accuracy. If the image is unclear or you are not certain about an identification, clearly state your uncertainty rather than guessing. Do not invent information.
 
-**CONTEXT:**
-The image is a user-selected, zoomed-in region from a larger astronomical photograph. Use the context from this URL about the original, full image to inform your analysis: ${widget.creditLink}
+                                **CONTEXT:**
+                                The image is a user-selected, zoomed-in region from a larger astronomical photograph. Use the context from this URL about the original, full image to inform your analysis: ${widget.creditLink}
 
-**RESPONSE FORMAT:**
-Your response must be formatted in Markdown as follows:
+                                **RESPONSE FORMAT:**
+                                Your response must be formatted in Markdown as follows:
 
-### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
+                                ### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
 
-**1. What Am I Seeing?**
-Based on the visual information and the provided context, identify the most likely celestial objects or phenomena visible. Describe the general type of object and its main characteristics.
+                                **1. What Am I Seeing?**
+                                Based on the visual information and the provided context, identify the most likely celestial objects or phenomena visible. Describe the general type of object and its main characteristics.
 
-**2. Scientific Context:**
-If known, name the larger object this crop belongs to. Provide a concise, scientific explanation of what is being shown in this specific region.
+                                **2. Scientific Context:**
+                                If known, name the larger object this crop belongs to. Provide a concise, scientific explanation of what is being shown in this specific region.
 
-**3. Key Features:**
-Using a bulleted list, point out any notable features visible *within this cropped image*. This could include prominent stars, dust lanes, gas clouds, or unique shapes.
+                                **3. Key Features:**
+                                Using a bulleted list, point out any notable features visible *within this cropped image*. This could include prominent stars, dust lanes, gas clouds, or unique shapes.
 
-**4. Interesting Facts:**
-Conclude with one or two fascinating and confirmed facts about the identified object or phenomenon.
-''';
-                        setState(() {
-                         // responseText.clear();
-                          contentTextStream = askAI(prompt, widget.image!);
-                        });
-                      },
+                                **4. Interesting Facts:**
+                                Conclude with one or two fascinating and confirmed facts about the identified object or phenomenon.
+                              ''';
+                              setState(() {
+                                _isSearching = true;
+                                responseText.clear();
+                                contentTextStream = askAI(prompt, widget.image!);
+                              });
+                            },
                     ),
-                    // Save (Download) Button
-                    // Save (Download) Button
-                    _ActionButton(
-                      icon: Icons.download,
-                      onTap: () {
-                        if (kDebugMode) print('Save action triggered!');
-                      },
-                    ),
-                    // Close Button
+                    _isDownloading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2.0, color: Colors.white),
+                          )
+                        : _ActionButton(
+                            icon: Icons.download,
+                            onTap: () async {
+                              if (widget.image == null) return;
+                              setState(() {
+                                _isDownloading = true;
+                              });
+                              try {
+                                await WebImageDownloader.downloadImageFromUInt8List(
+                                  uInt8List: widget.image!,
+                                  name: 'stellar_zoom_crop',
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Download failed: $e')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isDownloading = false;
+                                  });
+                                }
+                              }
+                            },
+                          ),
                     _ActionButton(
                       icon: Icons.close,
-                      onTap: widget.onClose, // Calls the parent's function
+                      onTap: widget.onClose,
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // --- Scrollable Text Widget Section (3rd Element, takes remaining space) ---
-                if (contentTextStream != null) // Check for content existence
+                if (contentTextStream != null)
                   Expanded(
                     child: StreamBuilder(
                       stream: contentTextStream,
                       builder: (context, asyncSnapshot) {
-                        if (asyncSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
+                        if (asyncSnapshot.connectionState != ConnectionState.done &&
+                            asyncSnapshot.connectionState != ConnectionState.none) {
+                          // Stream is running
+                        } else {
+                          // Stream is done, has error, or is null
+                          if (_isSearching) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() {
+                                  _isSearching = false;
+                                });
+                              }
+                            });
+                          }
+                        }
+
+                        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
                         }
 
                         if (asyncSnapshot.hasError) {
@@ -263,7 +296,7 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
                               "Something went wrong. ${asyncSnapshot.error}.Please Search Again.",
-                              style: TextStyle(color: Colors.red),
+                              style: const TextStyle(color: Colors.red),
                             ),
                           );
                         }
@@ -285,7 +318,6 @@ Conclude with one or two fascinating and confirmed facts about the identified ob
                     ),
                   )
                 else
-                  // Placeholder/Spacer if no text result is present
                   Expanded(
                     child: Center(
                       child: Text(
