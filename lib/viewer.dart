@@ -408,7 +408,25 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
     });
   }
 
+  void _showToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.black.withOpacity(0.8),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+      ),
+    );
+  }
+
   void _zoomIn() {
+    if (_showSearchPanel) {
+      _showToast("Please close the search panel to zoom.");
+      return;
+    }
     if (currentZoomLevel >= _getMaxZoomLevel() && scale >= 2.0) return;
 
     final oldScale = scale;
@@ -454,6 +472,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   }
 
   void _zoomOut() {
+    if (_showSearchPanel) {
+      _showToast("Please close the search panel to zoom.");
+      return;
+    }
     if (currentZoomLevel <= 1 && scale <= 1.0) return;
 
     final oldScale = scale;
@@ -548,6 +570,9 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   }
 
   void _onPanMove(DragUpdateDetails event) {
+    if (_showSearchPanel) {
+      return;
+    }
     if (_aiSearch) {
       setState(() {
         _snapshotBoxSize = Size(
@@ -642,9 +667,9 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                 _buildCanvas(),
                 _buildZoomControllPanel(),
                 _buildZoomLebelAndSearchPanel(),
-                if (_snapShot != null && _showSearchPanel) _buildSearchPanel(),
-                if (isShowingLabel) ..._buildLabelOverlays(),
 
+                if (isShowingLabel) ..._buildLabelOverlays(),
+                if (_snapShot != null && _showSearchPanel) _buildSearchPanel(),
                 if (showCustomLabelUi && currentLabelIndex != -1)
                   _featuresCard(),
                 _buildCreditLink(),
@@ -722,6 +747,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       height: viewPortSize.height,
       child: Listener(
         onPointerSignal: (PointerSignalEvent event) async {
+          if (_showSearchPanel) {
+            _showToast("Please close the search panel to zoom.");
+            return;
+          }
           if (event is PointerScrollEvent) {
             final scaleChange = event.scrollDelta.dy < 0
                 ? scaleFactor
@@ -731,6 +760,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
         },
         child: GestureDetector(
           onPanStart: (event) {
+            if (_showSearchPanel) {
+              _showToast("Please close the search panel to pan.");
+              return;
+            }
             if (_aiSearch) {
               _snapshotBoxStart = null;
               _snapshotBoxSize = null;
@@ -747,6 +780,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
           onPanEnd: _onPanEnd,
           onPanUpdate: _onPanMove,
           onLongPressStart: (event) {
+            if (_showSearchPanel) {
+              _showToast("Please close the search panel to add a label.");
+              return;
+            }
             if (isLebelInput) {
               setState(() {
                 Lebel lebel = Lebel(
@@ -834,22 +871,25 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   Padding _buildZoomLebelAndSearchPanel() {
     return // This is the main refactored widget snippet:
     Padding(
-      padding: const EdgeInsets.all(18.0),
+      padding: const EdgeInsets.all(8.0), // Reduced padding
       child: Align(
         alignment: Alignment.topRight,
         child: Container(
-          height: 40,
+          // Removed fixed height
           // Added padding around the controls for better visual spacing
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ), // Adjusted padding
           decoration: BoxDecoration(
-            color: Colors.black87,
-            borderRadius: BorderRadius.circular(10),
+            color: Colors.black.withOpacity(0.7), // Slightly more transparent
+            borderRadius: BorderRadius.circular(20), // Rounded corners
           ),
-          // Used Row with mainAxisSize.min to wrap children tightly
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Wrap(
+            spacing: 8.0, // spacing between controls
+            runSpacing: 4.0, // spacing between rows
+            alignment: WrapAlignment.end,
             children: [
-              // 1. "Add Label" Switch (Assumes 'isAddingLabel' is the state variable)
               _buildSwitchControl(
                 label: 'Add Label',
                 value: isLebelInput,
@@ -859,9 +899,6 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                   });
                 },
               ),
-
-              const SizedBox(width: 10), // Separator
-              // 2. "Show Label" Switch (New, assumes 'isShowingLabel' is the state variable)
               _buildSwitchControl(
                 label: 'Show Label',
                 value: isShowingLabel,
@@ -871,8 +908,6 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
                   });
                 },
               ),
-              const SizedBox(width: 10), // Separator
-              // 2. "Show Label" Switch (New, assumes 'isShowingLabel' is the state variable)
               _buildSwitchControl(
                 label: 'AI Search',
                 value: _aiSearch,
@@ -913,6 +948,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
               color: label.category?.color ?? Colors.lightGreenAccent,
             ),
             onPressed: () {
+              if (_showSearchPanel) {
+                _showToast("Please close the search panel to view labels.");
+                return;
+              }
               setState(() {
                 currentLabelIndex = i;
                 showCustomLabelUi = true;
@@ -1022,13 +1061,15 @@ Widget _buildSwitchControl({
   return Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
       Transform.scale(
-        scale: 0.6,
+        scale: 0.5,
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
           activeColor: Colors.blueAccent,
+          inactiveThumbColor: Colors.grey,
+          inactiveTrackColor: Colors.grey.withOpacity(0.5),
         ),
       ),
     ],

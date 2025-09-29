@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
@@ -153,9 +154,11 @@ class _BlurryCardState extends State<BlurryCard> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     return SizedBox(
-      width: 300,
-      height: widget.editable ? 450 : 400, // Increased height for the new input
+      width: min(400, screenWidth * 0.9),
+      height: widget.editable ? screenHeight * 0.95 : screenHeight * 0.9,
       child: Stack(
         children: [
           // The blurry, transparent background layer

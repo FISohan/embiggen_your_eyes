@@ -24,117 +24,120 @@ class _ImageCardState extends State<ImageCard> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.0), // rounded-lg
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => Viewer(
-                  resolutionTable: widget.image['resTable'],
-                  id: widget.image['id'],
-                  creditLink: widget.image['creditLink'],
-                  creditTitle: widget.image['creditTitle'],
+    return GestureDetector(
+      onLongPress: () => setState(() => _isHovered = !_isHovered),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0), // rounded-lg
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Viewer(
+                    resolutionTable: widget.image['resTable'],
+                    id: widget.image['id'],
+                    creditLink: widget.image['creditLink'],
+                    creditTitle: widget.image['creditTitle'],
+                  ),
                 ),
-              ),
-            );
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              CachedNetworkImage(
-                imageUrl: widget.image['imageUrl']!,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-              // Hover overlay with description
-              AnimatedOpacity(
-                opacity: _isHovered ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Container(
-                  color: Colors.black.withOpacity(0.7),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+              );
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: widget.image['imageUrl']!,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                ),
+                // Hover overlay with description
+                AnimatedOpacity(
+                  opacity: _isHovered ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.7),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            widget.image['title']!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8.0),
+                          Text(
+                            widget.image['description']!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Always visible bottom section with title and credit
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.8),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.image['title']!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        AnimatedOpacity(
+                          opacity: _isHovered ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Text(
+                            widget.image['title']!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 8.0),
-                        Text(
-                          widget.image['description']!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14.0,
-                            color: Colors.white70,
+                        const SizedBox(height: 4.0),
+                        InkWell(
+                          onTap: () => _launchUrl(widget.image['creditLink']!),
+                          child: Text(
+                            'Credit: ${widget.image['creditTitle']}',
+                            style: TextStyle(
+                              fontSize: 12.0,
+                              color: Colors.blue[300],
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-              // Always visible bottom section with title and credit
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.8),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedOpacity(
-                        opacity: _isHovered ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Text(
-                          widget.image['title']!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4.0),
-                      InkWell(
-                        onTap: () => _launchUrl(widget.image['creditLink']!),
-                        child: Text(
-                          'Credit: ${widget.image['creditTitle']}',
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            color: Colors.blue[300],
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -175,9 +178,7 @@ class HomePage extends StatelessWidget {
             "Stellar Zoom User Manual",
             style: TextStyle(color: Colors.white),
           ),
-          content: const SingleChildScrollView(
-            child: UserManual(),
-          ),
+          content: const SingleChildScrollView(child: UserManual()),
           actions: [
             TextButton(
               onPressed: () {
@@ -248,7 +249,9 @@ class HomePage extends StatelessWidget {
   Widget _buildHeroSection(BuildContext context) {
     return Container(
       // relative flex h-[80vh] min-h-[480px] w-full flex-col items-center justify-center bg-cover bg-fixed bg-center bg-no-repeat px-4 text-center
-      height: 300, // Approximate h-[80vh] and min-h-[480px]
+      height:
+          MediaQuery.of(context).size.height *
+          0.4, // Approximate h-[80vh] and min-h-[480px]
       width: double.infinity,
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -425,20 +428,29 @@ class HomePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32.0), // mb-8
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:
-                  3, // md:grid-cols-3, lg:grid-cols-3, xl:grid-cols-3
-              crossAxisSpacing: 24.0, // gap-6
-              mainAxisSpacing: 24.0, // gap-6
-              childAspectRatio: 1.0, // Adjust as needed
-            ),
-            itemCount: images.length,
-            itemBuilder: (context, index) {
-              final image = images[index];
-              return ImageCard(image: image);
+          LayoutBuilder(
+            builder: (context, constraints) {
+              int crossAxisCount = 3;
+              if (constraints.maxWidth < 600) {
+                crossAxisCount = 1;
+              } else if (constraints.maxWidth < 900) {
+                crossAxisCount = 2;
+              }
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 24.0,
+                  mainAxisSpacing: 24.0,
+                  childAspectRatio: 1.0,
+                ),
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  final image = images[index];
+                  return ImageCard(image: image);
+                },
+              );
             },
           ),
         ],
@@ -463,32 +475,38 @@ class UserManual extends StatelessWidget {
         _FeatureDescription(
           icon: Icons.explore,
           title: "Explore the Cosmos",
-          description: "From the home page, you can browse a gallery of stunning astronomical images. Click on any image to start your deep-space exploration.",
+          description:
+              "From the home page, you can browse a gallery of stunning astronomical images. Click on any image to start your deep-space exploration.",
         ),
         _FeatureDescription(
           icon: Icons.zoom_in,
           title: "Deep Zoom & Panning",
-          description: "In the viewer, use your mouse wheel or the on-screen controls to zoom in and out. Click and drag to pan across the vast expanse of the image.",
+          description:
+              "In the viewer, use your mouse wheel or the on-screen controls to zoom in and out. Click and drag to pan across the vast expanse of the image.",
         ),
         _FeatureDescription(
           icon: Icons.label,
           title: "Add Custom Labels",
-          description: "Enable 'Add Label' mode to place your own annotations on the image. Long-press on any point of interest to create a new label. You can add a title, description, and even categorize your findings.",
+          description:
+              "Enable 'Add Label' mode to place your own annotations on the image. Long-press on any point of interest to create a new label. You can add a title, description, and even categorize your findings.",
         ),
         _FeatureDescription(
           icon: Icons.auto_awesome,
           title: "AI-Powered Analysis",
-          description: "Activate 'AI Search' mode and draw a box around any region of the image. Our AI assistant will provide a detailed scientific analysis of the selected area.",
+          description:
+              "Activate 'AI Search' mode and draw a box around any region of the image. Our AI assistant will provide a detailed scientific analysis of the selected area.",
         ),
         _FeatureDescription(
           icon: Icons.volume_up,
           title: "Text-to-Speech",
-          description: "For any label you've created or viewed, you can use the text-to-speech feature to listen to the description. Just click the play button on the label card.",
+          description:
+              "For any label you've created or viewed, you can use the text-to-speech feature to listen to the description. Just click the play button on the label card.",
         ),
         _FeatureDescription(
           icon: Icons.save,
           title: "Offline Storage",
-          description: "All the labels you create are saved locally on your device, so you can revisit your discoveries at any time.",
+          description:
+              "All the labels you create are saved locally on your device, so you can revisit your discoveries at any time.",
         ),
       ],
     );

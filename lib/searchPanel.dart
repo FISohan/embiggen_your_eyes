@@ -126,7 +126,6 @@ class Searchpanel extends StatefulWidget {
   State<Searchpanel> createState() => _SearchpanelState();
 }
 
-
 class _SearchpanelState extends State<Searchpanel> {
   Stream<GenerateContentResponse>? contentTextStream;
   StringBuffer responseText = StringBuffer();
@@ -144,7 +143,7 @@ class _SearchpanelState extends State<Searchpanel> {
     'Russian',
     'Portuguese',
     'German',
-    'Chinese (Simplified)'
+    'Chinese (Simplified)',
   ];
 
   @override
@@ -160,9 +159,10 @@ class _SearchpanelState extends State<Searchpanel> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: 300,
-      height: 490,
+      width: min(400, screenWidth * 0.9),
+      height: MediaQuery.of(context).size.height * 0.95,
       child: Stack(
         children: [
           ClipRRect(
@@ -219,7 +219,8 @@ class _SearchpanelState extends State<Searchpanel> {
                       onTap: _isSearching
                           ? null
                           : () {
-                              final prompt = '''
+                              final prompt =
+                                  '''
 **ROLE AND TASK:**
 You are a Senior Research Astronomer and Astrophysicist specializing in deep-field imaging and star formation science. Your primary task is to conduct a detailed, scientifically rigorous analysis of the provided zoomed-in astronomical image. You must use the associated context link to ensure the object's identity, distance, and scientific significance are accurately reflected.
 
@@ -260,7 +261,10 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                                 _isSearching = true;
                                 _randomFact = _getNewFact();
                                 responseText.clear();
-                                contentTextStream = askAI(prompt, widget.image!);
+                                contentTextStream = askAI(
+                                  prompt,
+                                  widget.image!,
+                                );
                               });
                             },
                     ),
@@ -269,7 +273,9 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2.0, color: Colors.white),
+                              strokeWidth: 2.0,
+                              color: Colors.white,
+                            ),
                           )
                         : _ActionButton(
                             icon: Icons.download,
@@ -286,7 +292,9 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                               } catch (e) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Download failed: $e')),
+                                    SnackBar(
+                                      content: Text('Download failed: $e'),
+                                    ),
                                   );
                                 }
                               } finally {
@@ -306,15 +314,18 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                       },
                       color: Colors.grey[850]?.withOpacity(0.9),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       tooltip: 'Select Language ($_selectedLanguage)',
                       offset: const Offset(0, 40),
                       itemBuilder: (BuildContext context) {
                         return _languages.map((String language) {
                           return PopupMenuItem<String>(
                             value: language,
-                            child: Text(language,
-                                style: const TextStyle(color: Colors.white)),
+                            child: Text(
+                              language,
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           );
                         }).toList();
                       },
@@ -324,14 +335,14 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.language,
-                            color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.language,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
-                    _ActionButton(
-                      icon: Icons.close,
-                      onTap: widget.onClose,
-                    ),
+                    _ActionButton(icon: Icons.close, onTap: widget.onClose),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -340,8 +351,10 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                     child: StreamBuilder(
                       stream: contentTextStream,
                       builder: (context, asyncSnapshot) {
-                        if (asyncSnapshot.connectionState != ConnectionState.done &&
-                            asyncSnapshot.connectionState != ConnectionState.none) {
+                        if (asyncSnapshot.connectionState !=
+                                ConnectionState.done &&
+                            asyncSnapshot.connectionState !=
+                                ConnectionState.none) {
                           // Stream is running
                         } else {
                           // Stream is done, has error, or is null
@@ -356,7 +369,8 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                           }
                         }
 
-                        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                        if (asyncSnapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -368,7 +382,10 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                                   Text(
                                     _randomFact ?? 'Did you know...',
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -389,8 +406,12 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                           responseText.write(asyncSnapshot.data!.text);
                         }
 
-                        bool isDone = asyncSnapshot.connectionState == ConnectionState.done;
-                        final sanitizedText = responseText.toString().replaceAll('\$', r'\$');
+                        bool isDone =
+                            asyncSnapshot.connectionState ==
+                            ConnectionState.done;
+                        final sanitizedText = responseText
+                            .toString()
+                            .replaceAll('\$', r'\$');
 
                         return _ScrollableResultText(
                           text: sanitizedText,
