@@ -159,13 +159,39 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
-          _buildHeader(),
+          _buildHeader(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  void _showUserManual(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F1A23),
+          title: const Text(
+            "Stellar Zoom User Manual",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const SingleChildScrollView(
+            child: UserManual(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
     return Container(
       // sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-background-dark/50 px-6 py-4 backdrop-blur-md md:px-10
       color: const Color(0xFF0F1A23).withOpacity(0.5), // bg-background-dark/50
@@ -203,7 +229,7 @@ class HomePage extends StatelessWidget {
           // Navigation links (User Manual)
           TextButton(
             onPressed: () {
-              // Handle navigation
+              _showUserManual(context);
             },
             child: const Text(
               "User Manual",
@@ -367,7 +393,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/wallpaper1/heic0611b.jpg",
         "creditLink": "https://esahubble.org/images/heic0611b/",
-        "creditTitle": "ESA/Webb",
+        "creditTitle": "NASA, ESA, and S. Beckwith (STScI) and the HUDF Team",
       },
     ];
 
@@ -414,6 +440,100 @@ class HomePage extends StatelessWidget {
               final image = images[index];
               return ImageCard(image: image);
             },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class UserManual extends StatelessWidget {
+  const UserManual({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Welcome to Stellar Zoom! Here's a guide to help you explore the cosmos.",
+          style: TextStyle(color: Colors.white70),
+        ),
+        SizedBox(height: 16),
+        _FeatureDescription(
+          icon: Icons.explore,
+          title: "Explore the Cosmos",
+          description: "From the home page, you can browse a gallery of stunning astronomical images. Click on any image to start your deep-space exploration.",
+        ),
+        _FeatureDescription(
+          icon: Icons.zoom_in,
+          title: "Deep Zoom & Panning",
+          description: "In the viewer, use your mouse wheel or the on-screen controls to zoom in and out. Click and drag to pan across the vast expanse of the image.",
+        ),
+        _FeatureDescription(
+          icon: Icons.label,
+          title: "Add Custom Labels",
+          description: "Enable 'Add Label' mode to place your own annotations on the image. Long-press on any point of interest to create a new label. You can add a title, description, and even categorize your findings.",
+        ),
+        _FeatureDescription(
+          icon: Icons.auto_awesome,
+          title: "AI-Powered Analysis",
+          description: "Activate 'AI Search' mode and draw a box around any region of the image. Our AI assistant will provide a detailed scientific analysis of the selected area.",
+        ),
+        _FeatureDescription(
+          icon: Icons.volume_up,
+          title: "Text-to-Speech",
+          description: "For any label you've created or viewed, you can use the text-to-speech feature to listen to the description. Just click the play button on the label card.",
+        ),
+        _FeatureDescription(
+          icon: Icons.save,
+          title: "Offline Storage",
+          description: "All the labels you create are saved locally on your device, so you can revisit your discoveries at any time.",
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureDescription extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _FeatureDescription({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.blue[300], size: 24),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
           ),
         ],
       ),
