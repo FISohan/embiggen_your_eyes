@@ -8,6 +8,7 @@ const String milkWay = "galaxy222";
 const String carina = "carina";
 const String tapestryOfBlazingStarbirth = "galaxy364";
 const String hubbleUltraDeepField = "glaxxy2334";
+const String sharpestEverViewOfTheAndromedaGalaxy = "galaxy0000";
 
 final Map<int, Size> resolutionTableMessiar13 = {
   1: Size(1080, 253),
@@ -17,6 +18,15 @@ final Map<int, Size> resolutionTableMessiar13 = {
   5: Size(17280, 4041),
   6: Size(34560, 8082),
   7: Size(42208, 9870),
+};
+final Map<int, Size> resolutionTablesharpestEverViewOfTheAndromedaGalaxy = {
+  1: Size(1080, 345),
+  2: Size(2160, 691),
+  3: Size(4320, 1381),
+  4: Size(8640, 2762),
+  5: Size(17280, 5524),
+  6: Size(34560, 11049),
+  7: Size(40000, 12788),
 };
 
 final Map<int, Size> resolutionTableM51 = {

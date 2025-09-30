@@ -311,6 +311,17 @@ class HomePage extends StatelessWidget {
 
   Widget _buildImageGallery(BuildContext context) {
     final List<Map<String, dynamic>> images = [
+            {
+        "title": "Sharpest Ever View Of The Andromeda Galaxy",
+        "id": sharpestEverViewOfTheAndromedaGalaxy,
+        "resTable": resolutionTablesharpestEverViewOfTheAndromedaGalaxy,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/screen/heic1502a.jpg",
+        "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
+        "creditLink": "https://esahubble.org/images/heic1502a/",
+      },
       {
         "title": "Andromeda Galaxy",
         "id": messiar13,
@@ -320,7 +331,7 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
         "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
-        "creditLink": "https://esahubble.org/images/heic0506a/",
+        "creditLink": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/#:~:text=In%20January%20of%202025%2C%20NASA&#x27;s,were%20challenging%20to%20stitch%20together",
       },
       {
         "title": "The Whirlpool Galaxy",
@@ -384,7 +395,7 @@ class HomePage extends StatelessWidget {
             "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2007a.jpg",
-        "creditLink": "https://esawebb.org/images/carinanebula3/",
+        "creditLink": "https://esahubble.org/images/heic2007a/",
         "creditTitle": "ESA/Webb",
       },
       {
