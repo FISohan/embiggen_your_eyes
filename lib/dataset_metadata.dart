@@ -9,6 +9,14 @@ const String carina = "carina";
 const String tapestryOfBlazingStarbirth = "galaxy364";
 const String hubbleUltraDeepField = "glaxxy2334";
 const String sharpestEverViewOfTheAndromedaGalaxy = "galaxy0000";
+const String pillarsOfCreation = "galaxy0001";
+
+final Map<int, Size> resolutionTablePillarsOfCreation = {
+  1: Size(1080, 1871),
+  2: Size(2160, 3741),
+  3: Size(4320, 7482),
+  4: Size(8423, 14589),
+};
 
 final Map<int, Size> resolutionTableMessiar13 = {
   1: Size(1080, 253),

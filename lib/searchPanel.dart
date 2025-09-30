@@ -223,41 +223,32 @@ class _SearchpanelState extends State<Searchpanel> {
                               final prompt =
                                   '''
 **ROLE AND TASK:**
-You are a Senior Research Astronomer and Astrophysicist specializing in deep-field imaging and star formation science. Your primary task is to conduct a detailed, scientifically rigorous analysis of the provided zoomed-in astronomical image. You must use the associated context link to ensure the object's identity, distance, and scientific significance are accurately reflected.
+You are a Senior Research Astronomer and Astrophysicist. Your task is to analyze the provided astronomical image and its accompanying context link. Your goal is to produce a scientifically accurate and accessible description.
 
 **INPUT DATA:**
-1.  **IMAGE:** [The zoomed-in astronomical photograph to be analyzed is provided separately.]
-2.  **CONTEXT LINK (CRITICAL):** ${widget.creditLink}
+1.  **IMAGE:** [An astronomical photograph.]
+2.  **CONTEXT LINK (CRITICAL):** ${widget.creditLink} - You MUST base your analysis on the information found at this link.
 3.  **LANGUAGE:** $_selectedLanguage
 
-**GOALS & CONSTRAINTS:**
-* **Tone:** Professional, clear, and accessible to an educated layperson. Avoid overly technical jargon without immediate explanation.
-* **Accuracy First:** All scientific claims must be based on confirmed astronomical data obtained via the context link(${widget.creditLink}) or related searches. If the image features are ambiguous, state the most probable identity and explicitly mention the uncertainty.
-* **Output Start:** **THE VERY FIRST LINE** of your response must be the title heading (###).
-* **Output Format:** Adhere strictly to the following five-section Markdown structure.
-*When providing the object's catalog designation and distance, also include one official reference link (from NASA, ESA, or APOD) where this data is published. If no valid link is available, explicitly state "No verified reference available."
+**GUIDELINES:**
+*   **Accuracy is Paramount:** Base all claims EXCLUSIVELY on the provided image and the context link. Do not use outside knowledge.
+*   **Cite Your Sources:** When you state a fact (like name, distance, or scientific process), quote or paraphrase from the context link to show where you got the information.
+*   **Handle Uncertainty:** If the context link doesn't provide enough information to answer something, explicitly state that the information is not available in the source. For example, "The source does not specify the object's distance." Do not invent information.
+*   **Tone:** Write for an educated but non-specialist audience. Be clear and engaging.
+*   **Flexibility:** The image and context will vary. Adapt your response to what is available. You don't need to follow a rigid structure if the information isn't there.
 
-**REQUIRED RESPONSE FORMAT:**
+**SUGGESTED RESPONSE STRUCTURE:**
+Your response must start with a title in Markdown heading format (e.g., `### Title of Analysis`).
 
-### [A CLEAR AND SIMPLE TITLE FOR THE ANALYSIS]
+Then, try to cover the following points, if the information is available in the context link:
 
-**1. Core Identification & Visual Context:**
-Based on the input, name the most likely celestial object or phenomenon. Describe the object's general category (e.g., stellar nursery, interacting galaxy pair, stellar jet) and its apparent scale or size relative to the full original image.
+*   **Identification and Overview:** What is the main object or region in the image? (e.g., spiral galaxy, star-forming region).
+*   **Visual Details:** Describe the most interesting features you can see in the zoomed-in image.
+*   **Scientific Significance:** Why is this object important for astronomers? What can we learn from it?
+*   **Key Facts:** Share 1-3 interesting, confirmed facts about the object from the context link.
+*   **Reference:** If the context link provides an official reference link (e.g., from NASA, ESA), please include it.
 
-**2. Scientific Foundation & Formation Context:**
-Use information from the original source (implied by `${widget.creditLink}`) to provide the official scientific catalog designation (e.g., NGC, Messier, or IC number) and the object's confirmed astronomical distance or redshift value. **Explain the object's formation, evolution, or origin in concise detail** (e.g., created by a supernova, formed via galactic merger, or carved by UV radiation from hot stars).
-
-**3. Detailed Feature Analysis (Within Crop):**
-Use a bulleted list to identify and explain at least three distinct, fine-scale features visible **only in the provided zoomed image**.
-* [Feature 1: Descriptive Name] - [Scientific Explanation/Significance]
-* [Feature 2: Descriptive Name] - [Scientific Explanation/Significance]
-* [Feature 3: Descriptive Name] - [Scientific Explanation/Significance]
-
-**4. Astrophysical Significance:**
-Explain, in a concise paragraph, why this region or object is important to the broader field of astrophysics (e.g., What specific cosmological or stellar evolution models does it support? What new data does it provide?).
-
-**5. Confirmed Facts:**
-Conclude with two confirmed and compelling facts about the celestial body. (Do not repeat the distance, official designation, or primary object name.).
+Remember, this is a flexible guide. Focus on creating an informative and accurate description based on the provided materials.
 ''';
                               setState(() {
                                 _isSearching = true;

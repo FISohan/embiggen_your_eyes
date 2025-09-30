@@ -151,7 +151,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1A23), // background-dark
+      backgroundColor: Colors.black, // background-dark
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -195,7 +195,6 @@ class HomePage extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       // sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-background-dark/50 px-6 py-4 backdrop-blur-md md:px-10
-      color: const Color(0xFF0F1A23).withOpacity(0.5), // bg-background-dark/50
       padding: const EdgeInsets.symmetric(
         horizontal: 24.0,
         vertical: 16.0,
@@ -409,6 +408,17 @@ class HomePage extends StatelessWidget {
             "https://cdn.esahubble.org/archives/images/wallpaper1/heic0611b.jpg",
         "creditLink": "https://esahubble.org/images/heic0611b/",
         "creditTitle": "NASA, ESA, and S. Beckwith (STScI) and the HUDF Team",
+      },
+            {
+        "title": "Pillars of Creation",
+        "id": pillarsOfCreation,
+        "resTable": resolutionTablePillarsOfCreation,
+        "description":
+            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+        "imageUrl":
+            "https://cdn.esawebb.org/archives/images/wallpaper1/weic2216b.jpg",
+        "creditLink": " https://esawebb.org/images/weic2216b/",
+        "creditTitle": "NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI).",
       },
     ];
 

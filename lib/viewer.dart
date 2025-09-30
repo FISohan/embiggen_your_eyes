@@ -476,7 +476,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       _showToast("Please close the search panel to zoom.");
       return;
     }
-    if (currentZoomLevel <= 1 && scale <= 0.5) return;
+    if (currentZoomLevel <= 1 && scale <= 0.4) return;
 
     final oldScale = scale;
     final oldZoomLevel = currentZoomLevel;
@@ -493,10 +493,10 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       nextZoomLevel--;
     }
 
-    // if (nextZoomLevel < 1) {
-    //   nextZoomLevel = 1;
-    //   nextScale = max(nextScale, 0.4);
-    // }
+    if (nextZoomLevel < 1) {
+      nextZoomLevel = 1;
+      nextScale = max(nextScale, 0.4);
+    }
 
     // Correct focal point calculation for discrete zoom levels
     final oldTotalScale = oldScale * resolutionTable[oldZoomLevel]!.width;
