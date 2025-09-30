@@ -411,7 +411,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
   void _showToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Center(child: Text(message)),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.black.withOpacity(0.8),
         behavior: SnackBarBehavior.floating,
@@ -476,7 +476,7 @@ class _ViewerState extends State<Viewer> with TickerProviderStateMixin {
       _showToast("Please close the search panel to zoom.");
       return;
     }
-    if (currentZoomLevel <= 1 && scale <= 1.0) return;
+    if (currentZoomLevel <= 1 && scale <= 0.5) return;
 
     final oldScale = scale;
     final oldZoomLevel = currentZoomLevel;

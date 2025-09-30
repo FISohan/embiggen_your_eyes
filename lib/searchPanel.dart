@@ -133,6 +133,7 @@ class _SearchpanelState extends State<Searchpanel> {
   bool _isSearching = false;
   String? _randomFact;
   String _selectedLanguage = 'English';
+  bool _isLabelAdded = false;
   final List<String> _languages = [
     'English',
     'Spanish',
@@ -261,6 +262,7 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                                 _isSearching = true;
                                 _randomFact = _getNewFact();
                                 responseText.clear();
+                                _isLabelAdded = false; // Reset here
                                 contentTextStream = askAI(
                                   prompt,
                                   widget.image!,
@@ -416,9 +418,19 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                         return _ScrollableResultText(
                           text: sanitizedText,
                           showAddButton: isDone && responseText.isNotEmpty,
-                          onAddLabel: () {
-                            widget.onAddLabel?.call(responseText.toString());
-                          },
+                          onAddLabel: _isLabelAdded
+                              ? null
+                              : () {
+                                  widget.onAddLabel?.call(responseText.toString());
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Label added successfully!"),
+                                    ),
+                                  );
+                                  setState(() {
+                                    _isLabelAdded = true;
+                                  });
+                                },
                         );
                       },
                     ),
