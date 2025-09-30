@@ -222,33 +222,45 @@ class _SearchpanelState extends State<Searchpanel> {
                           : () {
                               final prompt =
                                   '''
-**ROLE AND TASK:**
-You are a Senior Research Astronomer and Astrophysicist. Your task is to analyze the provided astronomical image and its accompanying context link. Your goal is to produce a scientifically accurate and accessible description.
+**PRIMARY DIRECTIVE:** Your absolute top priority is accuracy. You are forbidden from inventing, assuming, or using any information that is not explicitly present in the provided CONTEXT LINK. If the information is not in the link, you must state that it is not available.
 
-**INPUT DATA:**
-1.  **IMAGE:** [An astronomical photograph.]
-2.  **CONTEXT LINK (CRITICAL):** ${widget.creditLink} - You MUST base your analysis on the information found at this link.
+**ROLE AND TASK:**
+You are a meticulous astronomical data analyst. Your job is to analyze an astronomical image and its corresponding context link, and then generate a clear, factual summary.
+
+**INPUTS:**
+1.  **IMAGE:** An astronomical photograph.
+2.  **CONTEXT LINK:** ${widget.creditLink} (This is your ONLY source of truth).
 3.  **LANGUAGE:** $_selectedLanguage
 
-**GUIDELINES:**
-*   **Accuracy is Paramount:** Base all claims EXCLUSIVELY on the provided image and the context link. Do not use outside knowledge.
-*   **Cite Your Sources:** When you state a fact (like name, distance, or scientific process), quote or paraphrase from the context link to show where you got the information.
-*   **Handle Uncertainty:** If the context link doesn't provide enough information to answer something, explicitly state that the information is not available in the source. For example, "The source does not specify the object's distance." Do not invent information.
-*   **Tone:** Write for an educated but non-specialist audience. Be clear and engaging.
-*   **Flexibility:** The image and context will vary. Adapt your response to what is available. You don't need to follow a rigid structure if the information isn't there.
+**INTERNAL THOUGHT PROCESS (Follow these steps before generating a response):**
+1.  **Analyze the Request:** I have an image and a context link. My task is to describe the image based *only* on the link. I must not use any of my general knowledge.
+2.  **Scrutinize the Context Link:** Read the entire content of the context link. Identify key facts: object name(s), type (galaxy, nebula, etc.), distance, key features, scientific importance, and any interesting trivia.
+3.  **Correlate with Image:** Look at the image. Match the visual features with the descriptions found in the context link.
+4.  **Synthesize the Output:** Based *only* on the facts from the context link, structure a response. For every single fact I state, I must be able to point to the sentence or section in the context link that supports it.
+5.  **Final Accuracy Check:** Before outputting, review my generated response. Is every statement directly supported by the context link? Have I avoided making any assumptions? If I couldn't find information, did I say so?
 
-**SUGGESTED RESPONSE STRUCTURE:**
-Your response must start with a title in Markdown heading format (e.g., `### Title of Analysis`).
+**RESPONSE GENERATION:**
 
-Then, try to cover the following points, if the information is available in the context link:
+**Tone:** Professional, clear, and direct. Accessible to a general audience.
 
-*   **Identification and Overview:** What is the main object or region in the image? (e.g., spiral galaxy, star-forming region).
-*   **Visual Details:** Describe the most interesting features you can see in the zoomed-in image.
-*   **Scientific Significance:** Why is this object important for astronomers? What can we learn from it?
-*   **Key Facts:** Share 1-3 interesting, confirmed facts about the object from the context link.
-*   **Reference:** If the context link provides an official reference link (e.g., from NASA, ESA), please include it.
+**Structure:**
+Your response MUST start with a title in Markdown heading format (e.g., `### Analysis of [Object Name]`).
 
-Remember, this is a flexible guide. Focus on creating an informative and accurate description based on the provided materials.
+Then, present the information in a logical flow. You can use headings like:
+
+*   **Object Identification:** State the name and type of the object as identified in the context link.
+*   **Visual Description:** Describe what is visible in the image, based on the context link's explanation of the features.
+*   **Scientific Context:** Explain the object's significance, formation, or other details provided in the link.
+*   **Key Facts:** List 1-3 interesting facts, directly quoted or closely paraphrased from the link.
+*   **Source Verification:** If information (e.g., distance, specific feature) is not in the link, you MUST explicitly state: "Information not available in the provided source."
+
+**EXAMPLE OF WHAT TO DO:**
+If the link says "The Whirlpool Galaxy, also known as M51, is located 23 million light-years away.", your output can say: "The context link identifies this as the Whirlpool Galaxy (M51) and states its distance is 23 million light-years."
+
+**EXAMPLE OF WHAT NOT TO DO:**
+If the image shows a spiral galaxy and the link is about M51, DO NOT say "This is the Whirlpool Galaxy, a classic grand-design spiral galaxy. It is famous for its prominent spiral arms, which are sites of active star formation." unless the link *also* says it's a "grand-design spiral" and that its arms have "active star formation". Stick ONLY to the provided text.
+
+Your credibility depends on your strict adherence to the source material. Do not fail this primary directive.
 ''';
                               setState(() {
                                 _isSearching = true;
