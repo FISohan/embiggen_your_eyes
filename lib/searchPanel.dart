@@ -232,9 +232,10 @@ You are a Senior Research Astronomer and Astrophysicist specializing in deep-fie
 
 **GOALS & CONSTRAINTS:**
 * **Tone:** Professional, clear, and accessible to an educated layperson. Avoid overly technical jargon without immediate explanation.
-* **Accuracy First:** All scientific claims must be based on confirmed astronomical data obtained via the context link or related searches. If the image features are ambiguous, state the most probable identity and explicitly mention the uncertainty.
+* **Accuracy First:** All scientific claims must be based on confirmed astronomical data obtained via the context link(${widget.creditLink}) or related searches. If the image features are ambiguous, state the most probable identity and explicitly mention the uncertainty.
 * **Output Start:** **THE VERY FIRST LINE** of your response must be the title heading (###).
 * **Output Format:** Adhere strictly to the following five-section Markdown structure.
+*When providing the object's catalog designation and distance, also include one official reference link (from NASA, ESA, or APOD) where this data is published. If no valid link is available, explicitly state "No verified reference available."
 
 **REQUIRED RESPONSE FORMAT:**
 
@@ -421,10 +422,14 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                           onAddLabel: _isLabelAdded
                               ? null
                               : () {
-                                  widget.onAddLabel?.call(responseText.toString());
+                                  widget.onAddLabel?.call(
+                                    responseText.toString(),
+                                  );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text("Label added successfully!"),
+                                      content: Text(
+                                        "Label added successfully!",
+                                      ),
                                     ),
                                   );
                                   setState(() {
@@ -444,6 +449,16 @@ Conclude with two confirmed and compelling facts about the celestial body. (Do n
                       ),
                     ),
                   ),
+                const SizedBox(height: 8),
+                const Text(
+                  "AI-generated content may be inaccurate. Please verify critical information.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 10,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
