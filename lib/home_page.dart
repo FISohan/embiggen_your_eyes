@@ -173,7 +173,7 @@ class HomePage extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF0F1A23),
+          backgroundColor: Colors.black,
           title: const Text(
             "Stellar Zoom User Manual",
             style: TextStyle(color: Colors.white),
@@ -311,7 +311,7 @@ class HomePage extends StatelessWidget {
 
   Widget _buildImageGallery(BuildContext context) {
     final List<Map<String, dynamic>> images = [
-            {
+      {
         "title": "Sharpest Ever View Of The Andromeda Galaxy",
         "id": sharpestEverViewOfTheAndromedaGalaxy,
         "resTable": resolutionTablesharpestEverViewOfTheAndromedaGalaxy,
@@ -331,7 +331,8 @@ class HomePage extends StatelessWidget {
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
         "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
-        "creditLink": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/#:~:text=In%20January%20of%202025%2C%20NASA&#x27;s,were%20challenging%20to%20stitch%20together",
+        "creditLink":
+            "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/#:~:text=In%20January%20of%202025%2C%20NASA&#x27;s,were%20challenging%20to%20stitch%20together",
       },
       {
         "title": "The Whirlpool Galaxy",
