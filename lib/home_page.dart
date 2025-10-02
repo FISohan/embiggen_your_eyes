@@ -311,114 +311,118 @@ class HomePage extends StatelessWidget {
   Widget _buildImageGallery(BuildContext context) {
     final List<Map<String, dynamic>> images = [
       {
-        "title": "Sharpest Ever View Of The Andromeda Galaxy",
+        "title": "Sharpest View of Andromeda Galaxy",
         "id": sharpestEverViewOfTheAndromedaGalaxy,
         "resTable": resolutionTablesharpestEverViewOfTheAndromedaGalaxy,
         "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+            "The Hubble Space Telescope’s largest image ever released — a 1.5-billion-pixel view of the Andromeda galaxy, revealing over 100 million stars and thousands of star clusters across 40,000 light-years.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/screen/heic1502a.jpg",
-        "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
+        "creditTitle":
+            "NASA, ESA, J. Dalcanton (University of Washington, USA), B. F. Williams (University of Washington, USA), L. C. Johnson (University of Washington, USA), the PHAT team, and R. Gendler",
         "creditLink": "https://esahubble.org/images/heic1502a/",
-      },
-      {
-        "title": "Andromeda Galaxy",
-        "id": messiar13,
-        "resTable": resolutionTableMessiar13,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl":
-            "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
-        "creditTitle": "NASA, ESA, B. Williams (University of Washington)",
-        "creditLink":
-            "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/#:~:text=In%20January%20of%202025%2C%20NASA&#x27;s,were%20challenging%20to%20stitch%20together",
-      },
-      {
-        "title": "The Whirlpool Galaxy",
-        "id": messiar51,
-        "resTable": resolutionTableM51,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl":
-            "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
-        "creditLink": "https://esahubble.org/images/heic0506a/",
-        "creditTitle": "ESA/Hubble",
-      },
-      {
-        "title": "Sombrero Galaxy",
-        "id": sombreroGalaxy,
-        "resTable": resolutionTableSombreroGalaxy,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl":
-            "https://cdn.esahubble.org/archives/images/wallpaper1/opo0328a.jpg",
-        "creditLink": "https://esahubble.org/images/opo0328a/",
-        "creditTitle": "ESA/Hubble",
       },
       {
         "title": "Sun",
         "id": sun,
         "resTable": resolutionTableSun,
         "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+            "NASA’s Solar Dynamics Observatory captured a powerful X1.0 solar flare on June 20, 2023, highlighting intense bursts of energy that can impact communications, power grids, and spacecraft.",
         "imageUrl":
             "http://sohan.sgp1.cdn.digitaloceanspaces.com/PIA26681_modest.jpg",
         "creditLink": "https://photojournal.jpl.nasa.gov/catalog/PIA26681",
-        "creditTitle": "NASA/JPL-Caltech",
-      },
-      {
-        "title": "The Central Parts of the Milky Way",
-        "id": milkWay,
-        "resTable": resolutionTableMilkWay,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl": "https://cdn.eso.org/images/wallpaper1/eso1242a.jpg",
-        "creditLink": "https://www.eso.org/public/images/eso1242a/",
-        "creditTitle": "ESO",
-      },
-      {
-        "title": "Carina Nebula Jets",
-        "id": carina,
-        "resTable": resolutionTableCarina,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl":
-            "https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg",
-        "creditLink": "https://esawebb.org/images/carinanebula3/",
-        "creditTitle": "ESA/Webb",
-      },
-      {
-        "title": "Tapestry of Blazing Starbirth",
-        "id": tapestryOfBlazingStarbirth,
-        "resTable": resolutionTableTapestryOfBlazingStarbirth,
-        "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
-        "imageUrl":
-            "https://cdn.esahubble.org/archives/images/screen/heic2007a.jpg",
-        "creditLink": "https://esahubble.org/images/heic2007a/",
-        "creditTitle": "ESA/Webb",
+        "creditTitle": "PhotoJournal, NASA",
       },
       {
         "title": "Hubble Ultra Deep Field",
         "id": hubbleUltraDeepField,
         "resTable": resolutionTableHubbleUltraDeepField,
         "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+            "Hubble's Ultra Deep Field reveals nearly 10,000 galaxies across cosmic time, from nearby spirals to some of the earliest galaxies formed when the universe was just 800 million years old.",
         "imageUrl":
             "https://cdn.esahubble.org/archives/images/wallpaper1/heic0611b.jpg",
         "creditLink": "https://esahubble.org/images/heic0611b/",
         "creditTitle": "NASA, ESA, and S. Beckwith (STScI) and the HUDF Team",
       },
-            {
-        "title": "Pillars of Creation",
+      {
+        "title": "Andromeda Galaxy",
+        "id": messiar13,
+        "resTable": resolutionTableMessiar13,
+        "description":
+            "Hubble’s 2.5-billion-pixel panorama of the Andromeda galaxy captures 200 million stars in stunning detail, revealing clues about its history and mergers with smaller galaxies.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/screen/heic2501a.jpg",
+        "creditTitle": "NASA",
+        "creditLink":
+            "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/#:~:text=In%20January%20of%202025%2C%20NASA&#x27;s,were%20challenging%20to%20stitch%20together",
+      },
+      {
+        "title": "Pillar of creation",
         "id": pillarsOfCreation,
         "resTable": resolutionTablePillarsOfCreation,
         "description":
-            "A breathtaking view of the Carina Nebula's cliffs, sculpted by stellar winds.",
+            "Webb's near-infrared view of the Pillars of Creation in the Eagle Nebula reveals young stars forming within towering clouds of gas and dust, offering unprecedented insight into stellar birth 6,500 light-years away.",
         "imageUrl":
             "https://cdn.esawebb.org/archives/images/wallpaper1/weic2216b.jpg",
-        "creditLink": " https://esawebb.org/images/weic2216b/",
-        "creditTitle": "NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI).",
+        "creditLink": "https://esawebb.org/images/weic2216b/",
+        "creditTitle":
+            "NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (STScI).",
+      },
+
+      {
+        "title": "Carina Nebula Jets",
+        "id": carina,
+        "resTable": resolutionTableCarina,
+        "description":
+            "Webb’s infrared view of NGC 3324’s Cosmic Cliffs reveals dozens of previously hidden jets and outflows from young stars, offering an unprecedented glimpse into star formation and early solar-system-like environments.",
+        "imageUrl":
+            "https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg",
+        "creditLink": "https://esawebb.org/images/carinanebula3/",
+        "creditTitle": "NASA, ESA, CSA, and STScI, J. DePasquale (STScI)",
+      },
+      {
+        "title": "The Whirlpool Galaxy",
+        "id": messiar51,
+        "resTable": resolutionTableM51,
+        "description":
+            "Hubble’s sharpest view of the Whirlpool Galaxy (M51) reveals its majestic spiral arms — vast star-forming factories shaped by an ongoing cosmic dance with its companion galaxy, NGC 5195.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
+        "creditLink": "https://esahubble.org/images/heic0506a/",
+        "creditTitle":
+            "NASA, ESA, S. Beckwith (STScI), and The Hubble Heritage Team (STScI/AURA)",
+      },
+      {
+        "title": "Sombrero Galaxy",
+        "id": sombreroGalaxy,
+        "resTable": resolutionTableSombreroGalaxy,
+        "description":
+            "Hubble’s striking image of the Sombrero Galaxy (M104) showcases its glowing central bulge and dark dust lanes, a massive system of 800 billion suns lying 30 million light-years away.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/wallpaper1/opo0328a.jpg",
+        "creditLink": "https://esahubble.org/images/opo0328a/",
+        "creditTitle": "NASA/ESA and The Hubble Heritage Team (STScI/AURA)",
+      },
+      {
+        "title": "The Central Parts of the Milky Way",
+        "id": milkWay,
+        "resTable": resolutionTableMilkWay,
+        "description":
+            "VISTA’s 9-billion-pixel infrared mosaic reveals the Milky Way’s central regions in unprecedented detail, peering through dust to capture billions of stars across a vast cosmic landscape.",
+        "imageUrl": "https://cdn.eso.org/images/wallpaper1/eso1242a.jpg",
+        "creditLink": "https://www.eso.org/public/images/eso1242a/",
+        "creditTitle": "ESO/VVV Survey/D. Minniti",
+      },
+      {
+        "title": "Tapestry of Blazing Starbirth",
+        "id": tapestryOfBlazingStarbirth,
+        "resTable": resolutionTableTapestryOfBlazingStarbirth,
+        "description":
+            "Hubble's striking view of NGC 2014 and NGC 2020 captures a vibrant star-forming region in the Large Magellanic Cloud, 163,000 light-years away.",
+        "imageUrl":
+            "https://cdn.esahubble.org/archives/images/screen/heic2007a.jpg",
+        "creditLink": "https://esahubble.org/images/heic2007a/",
+        "creditTitle": "NASA, ESA, and STScI",
       },
     ];
 
